@@ -7,52 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-05-16
+
 ### Added
 
-- CockroachDB support over the PostgreSQL wire protocol: browse tables, schemas, columns, indexes, and foreign keys, run queries, and view EXPLAIN plans. The new Connection Options field passes libpq options such as CockroachDB Cloud cluster routing. (#1226)
-- AI Chat: OpenAI provider now uses the Responses API for GPT-5 and Codex models, with reasoning shown in a collapsible Thinking panel above each reply. (#1112)
-- AI Chat: image input via drag-and-drop or paste into the composer. HEIC, TIFF, and BMP convert to PNG or JPEG. EXIF and GPS metadata are stripped before sending. (#1112)
-- AI Chat: reasoning effort picker for OpenAI (Minimal to Extra High) and Claude (Low to Extra High), shown only for models that support it. (#1112)
-- AI Chat: curated model picker for the OpenAI provider with GPT-5.5, GPT-5-Codex, GPT-5.3-Codex, and GPT-5.4-Mini at the top; free-text entry still works for unlisted models. (#1112)
-- AI Chat: Claude provider now supports extended thinking on Opus 4.7, Sonnet 4.6, and Haiku 4.5 using the same Thinking panel. (#1112)
-- AI Chat: tool schemas are strict by default, matching the Responses API and Claude strict tool use. (#1112)
-- iOS: SQL Server (MSSQL) connections via FreeTDS over TDS 7.4. Uses the shared `SSLConfiguration` model from connection settings. Supports connect, query, streaming results, schema browsing (tables, columns, indexes, foreign keys), database and schema switching, and explicit transactions.
-- iOS: data browser, search, filter, and pagination now render correct SQL Server syntax (bracket-quoted identifiers, `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` pagination, `SELECT TOP 1` for cell value fetch).
-- iOS: Settings > Sync now shows last sync time, a Sync Now button, and a Refresh from iCloud action that re-downloads every connection, group, and tag when items are missing on this device but visible on another.
-- Settings > Data Grid > Default row sort: opt in to sort tables by Primary key or First column on open. Defaults to No sorting (engine order). Click any column header to override. (#1284)
+- CockroachDB support over the PostgreSQL wire protocol, with a Connection Options field for libpq routing (#1226)
+- AI Chat: OpenAI Responses API for GPT-5 and Codex with a collapsible Thinking panel, reasoning effort picker, curated model picker, strict tool schemas by default, and image input via paste or drop (HEIC/TIFF/BMP converted, EXIF/GPS stripped) (#1112)
+- AI Chat: Claude extended thinking on Opus 4.7, Sonnet 4.6, and Haiku 4.5 (#1112)
+- iOS: SQL Server connections via FreeTDS over TDS 7.4, including data browser, search, filter, and pagination with SQL Server syntax
+- iOS: Settings > Sync shows last sync time with Sync Now and Refresh from iCloud
+- Settings > Data Grid > Default row sort opens tables sorted by primary key or first column (#1284)
 
 ### Changed
 
-- Database switcher now opens as a popover anchored to the database chip in the toolbar, with a checkmark on the active row and direct row-click to switch. Refresh sits beside the search field; New Database is a menu-style footer row that appears only when the engine supports it. ⌘N and ⌘R bind globally inside the popover. Schemas use folder icons; databases keep the cylinder.
-- New Database dialog uses the native sheet layout: title in the toolbar, Cancel and Create as toolbar items, wider form so the Name field no longer wraps.
-- Drop database now uses the native confirmation dialog instead of a custom sheet.
-- Add competitive tracking docs sourced from top TablePlus issues.
+- Database switcher is now a toolbar popover with active-row checkmark, search, Refresh, and an engine-aware New Database footer (⌘N and ⌘R bound globally)
+- New Database and Drop Database use native sheet and confirmation dialogs
 
 ### Security
 
-- AI Chat: destructive operations (DROP, TRUNCATE, ALTER...DROP) now always require user approval before executing. Silent safe-mode and "Always Allow" no longer bypass the confirmation for `confirm_destructive_operation`. Previously an AI could drop tables without the user seeing any prompt when the connection was in Silent mode.
+- AI Chat: destructive operations (DROP, TRUNCATE, ALTER...DROP) always prompt for approval; Silent mode and Always Allow no longer bypass the check
 
 ### Fixed
 
-- AI Chat: Gemini provider now sends tool schemas with `additionalProperties` stripped and optional fields rewritten from `type: [X, null]` to `type: X, nullable: true`, fixing 400 errors when sending a message with tools enabled.
-- AI Chat: Gemini provider now round-trips `thoughtSignature` on function calls, fixing the second-round 400 error after a tool runs.
-- AI Chat: GitHub Copilot tool registration was failing with "Expected string" schema validation errors. Optional fields now register with `type: "string"` instead of `type: ["string", "null"]` and are excluded from `required`, which Copilot's LSP validator accepts.
-- MySQL/MariaDB: `BIT(N)` columns now display as decimal numbers (`0`, `1`, `255`) instead of raw bytes that showed up as control characters like `^A` in the data grid. (#1272)
-- Structure tab: Refresh and ⌘R now show external schema changes immediately. Previously a column renamed from another session stayed stale on the Columns and DDL sub-tabs until the user switched tabs, and the ClickHouse Parts sub-tab ignored Refresh entirely. (#1281)
-- Query editor: Enter and ⌘+Enter now work after picking a table from the autocomplete dropdown. The completion window was leaving its key event monitor installed after acceptance, so subsequent Enter presses kept re-applying the same suggestion. Double-clicking a suggestion no longer closes the editor window. (#1278)
-- Query editor autocomplete now reflects external column renames after Refresh. Previously the schema cache kept suggesting the old column name until the connection was reopened.
-- ClickHouse, BigQuery, CloudflareD1, LibSQL, Etcd, and DynamoDB: long-running queries no longer fail at 30 seconds when Settings > Query timeout is set higher. The HTTP transport now uses the configured query timeout plus a 30-second grace, so the server's `max_execution_time` (or equivalent) fires before the client gives up. Setting "No limit" raises the transport ceiling to 1 hour. (#1267)
-- AI Chat: DeepSeek V4 thinking content (`reasoning_content`) is now captured during streaming and passed back in subsequent turns, fixing 400 errors when using deepseek-v4-pro or deepseek-v4-flash.
-- MongoDB: the connection form now shows a Username field. It was hidden for databases where authentication is optional, so connections to auth-enabled servers saved with no credentials and every query failed with "requires authentication" even though the connection looked healthy.
-- MongoDB: deleting a host from the multi-host editor now keeps the list interactive. The previous row stayed unselectable until the form lost and regained focus, matching `NSTableView` behavior of moving selection to the adjacent row. (#1293)
-- SQL import dropped statements when the database executed them slower than the file was parsed, so a re-imported export could fail with errors like "relation does not exist". The parser now waits for each statement to be consumed before reading more. (#1264)
-- SQL import ignored the database dialect, so PostgreSQL dumps with dollar-quoted function bodies were split at semicolons inside the body. (#1264)
-- SQL export emitted `DROP TABLE` for views, materialized views, and foreign tables, so re-importing failed with "is not a table". It now emits `DROP VIEW`, `DROP MATERIALIZED VIEW`, or `DROP FOREIGN TABLE` to match the object. (#1264)
-- iOS: connections, groups, and tags no longer silently disappear after a TestFlight or App Store update. Persistence files are now stored with `.completeFileProtectionUntilFirstUserAuthentication` so they stay readable across background sync runs, load failures are no longer swallowed, and the sync engine refuses to overwrite local data when the load was not actually empty.
+- AI Chat: Gemini tool calls no longer fail with 400, `thoughtSignature` round-trips after tool runs, and DeepSeek V4 thinking is captured across turns
+- AI Chat: GitHub Copilot tool registration accepts optional fields
+- MySQL/MariaDB: `BIT(N)` columns display as decimal numbers instead of raw bytes (#1272)
+- Structure tab: Refresh and ⌘R show external schema changes on Columns, DDL, and ClickHouse Parts (#1281)
+- Query editor: Enter and ⌘+Enter work after accepting an autocomplete suggestion, and double-click no longer closes the window (#1278)
+- Query editor autocomplete reflects external column renames after Refresh
+- ClickHouse, BigQuery, CloudflareD1, LibSQL, Etcd, and DynamoDB: long-running queries honor Settings > Query timeout instead of failing at 30 seconds (#1267)
+- MongoDB: connection form shows the Username field so auth-enabled servers stop failing with "requires authentication"
+- MongoDB: deleting a host from the multi-host editor keeps the list interactive (#1293)
+- SQL import: PostgreSQL dollar-quoted function bodies parse correctly, and statements are no longer dropped when the database is slower than the parser (#1264)
+- SQL export: views, materialized views, and foreign tables emit the matching `DROP` (#1264)
+- iOS: connections, groups, and tags survive TestFlight and App Store updates
 
 ### Removed
 
-- Help > Report an Issue panel. The menu item now opens GitHub Issues in a browser.
+- Help > Report an Issue; the menu item opens GitHub Issues in a browser
 
 ## [0.41.0] - 2026-05-13
 
@@ -1862,7 +1854,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.41.0...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.42.0...HEAD
+[0.42.0]: https://github.com/TableProApp/TablePro/compare/v0.41.0...v0.42.0
 [0.41.0]: https://github.com/TableProApp/TablePro/compare/v0.40.3...v0.41.0
 [0.40.3]: https://github.com/TableProApp/TablePro/compare/v0.40.2...v0.40.3
 [0.40.2]: https://github.com/TableProApp/TablePro/compare/v0.40.1...v0.40.2

@@ -11,33 +11,19 @@ final class KeychainSecureStore: SecureStore {
     private static func resolveAccessGroup() -> String {
         if let cached = cachedAccessGroup { return cached }
 
-        // Read team ID prefix from provisioning at runtime
-        if let seedID = Bundle.main.infoDictionary?["AppIdentifierPrefix"] as? String {
-            let group = "\(seedID)com.TablePro.shared"
-            cachedAccessGroup = group
-            return group
+        guard let prefix = Bundle.main.infoDictionary?["AppIdentifierPrefix"] as? String,
+              !prefix.isEmpty,
+              !prefix.hasPrefix("$(") else {
+            preconditionFailure(
+                "AppIdentifierPrefix missing from Info.plist. Add `<key>AppIdentifierPrefix</key>"
+                + "<string>$(AppIdentifierPrefix)</string>` so Xcode substitutes the team ID prefix "
+                + "at build time. Without it, keychain access fails with errSecMissingEntitlement (-34018)."
+            )
         }
-        // Fallback: query Keychain for the app's default access group
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: "__accessgroup_probe__",
-            kSecReturnAttributes as String: true,
-        ]
-        var result: AnyObject?
-        SecItemAdd(query as CFDictionary, &result)
-        SecItemDelete(query as CFDictionary)
-        if let attrs = result as? [String: Any],
-           let group = attrs[kSecAttrAccessGroup as String] as? String {
-            let prefix = group.components(separatedBy: ".").first ?? ""
-            let resolved = "\(prefix).com.TablePro.shared"
-            cachedAccessGroup = resolved
-            return resolved
-        }
-        // Use non-shared access group as last resort — credentials won't sync
-        // across devices but the app still functions
-        let fallback = "com.TablePro.shared"
-        cachedAccessGroup = fallback
-        return fallback
+
+        let group = "\(prefix)com.TablePro.shared"
+        cachedAccessGroup = group
+        return group
     }
 
     init() {
