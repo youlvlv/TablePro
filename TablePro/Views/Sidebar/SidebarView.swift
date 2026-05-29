@@ -10,7 +10,7 @@ import TableProPluginKit
 
 struct SidebarView: View {
     @State private var viewModel: SidebarViewModel
-    @Bindable private var schemaService = SchemaService.shared
+    private var schemaService: SchemaService { SchemaService.shared }
 
     var sidebarState: SharedSidebarState
     var windowState: WindowSidebarState
@@ -45,7 +45,7 @@ struct SidebarView: View {
 
     private var supportsSchemaFooter: Bool {
         guard PluginManager.shared.supportsSchemaSwitching(for: viewModel.databaseType) else { return false }
-        return groupingStrategy != .hierarchicalSchema
+        return groupingStrategy != .hierarchicalSchema && !usesDatabaseTree
     }
 
     private var selectedTablesBinding: Binding<Set<TableInfo>> {
@@ -75,13 +75,13 @@ struct SidebarView: View {
             get: { windowState.selectedTables },
             set: { windowState.selectedTables = $0 }
         )
-        let vm = SidebarViewModel(
+        let vm = SidebarViewModel.shared(
+            connectionId: connectionId,
+            databaseType: databaseType,
             selectedTables: selectedBinding,
             pendingTruncates: pendingTruncates,
             pendingDeletes: pendingDeletes,
-            tableOperationOptions: tableOperationOptions,
-            databaseType: databaseType,
-            connectionId: connectionId
+            tableOperationOptions: tableOperationOptions
         )
         vm.searchText = windowState.searchText
         if databaseType == .redis, let existingVM = sidebarState.redisKeyTreeViewModel {
@@ -151,9 +151,29 @@ struct SidebarView: View {
     private var tablesContent: some View {
         if groupingStrategy == .hierarchicalSchema {
             hierarchicalContent
+        } else if usesDatabaseTree {
+            databaseTreeContent
         } else {
             flatContent
         }
+    }
+
+    private var usesDatabaseTree: Bool {
+        PluginManager.shared.supportsDatabaseTree(for: viewModel.databaseType)
+            && sidebarState.sidebarLayout == .tree
+    }
+
+    @ViewBuilder
+    private var databaseTreeContent: some View {
+        DatabaseTreeView(
+            connectionId: connectionId,
+            databaseType: viewModel.databaseType,
+            viewModel: viewModel,
+            windowState: windowState,
+            pendingTruncates: $pendingTruncates,
+            pendingDeletes: $pendingDeletes,
+            coordinator: coordinator
+        )
     }
 
     @ViewBuilder
@@ -252,14 +272,21 @@ struct SidebarView: View {
                         }
                     )
                 } header: {
-                    Text("Keys")
+                    Text(String(localized: "Keys"))
                 }
             }
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
-        .contextMenu(forSelectionType: TableInfo.self) { _ in
-            EmptyView()
+        .contextMenu(forSelectionType: TableInfo.self) { selection in
+            SidebarContextMenu(
+                clickedTable: selection.first,
+                selectedTables: selection,
+                isReadOnly: coordinator?.safeModeLevel.blocksAllWrites ?? false,
+                onBatchToggleTruncate: { viewModel.batchToggleTruncate(tableNames: $0) },
+                onBatchToggleDelete: { viewModel.batchToggleDelete(tableNames: $0) },
+                coordinator: coordinator
+            )
         } primaryAction: { selection in
             guard let table = selection.first else { return }
             onDoubleClick?(table)
@@ -311,16 +338,6 @@ struct SidebarView: View {
                     isPendingDelete: pendingDeletes.contains(table.name)
                 )
                 .tag(table)
-                .contextMenu {
-                    SidebarContextMenu(
-                        clickedTable: table,
-                        selectedTables: windowState.selectedTables,
-                        isReadOnly: coordinator?.safeModeLevel.blocksAllWrites ?? false,
-                        onBatchToggleTruncate: { viewModel.batchToggleTruncate(tableNames: $0) },
-                        onBatchToggleDelete: { viewModel.batchToggleDelete(tableNames: $0) },
-                        coordinator: coordinator
-                    )
-                }
             }
         }
     }

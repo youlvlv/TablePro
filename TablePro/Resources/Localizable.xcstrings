@@ -11299,6 +11299,9 @@
         }
       }
     },
+    "Connecting to '%@' timed out." : {
+
+    },
     "Connecting to %@" : {
 
     },
@@ -15066,6 +15069,9 @@
           }
         }
       }
+    },
+    "Default layout for new connections:" : {
+
     },
     "Default Operator" : {
       "localizations" : {
@@ -26904,6 +26910,9 @@
         }
       }
     },
+    "Layout for new connections on servers that support a database tree. Switch the current connection from the View menu." : {
+
+    },
     "Length" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -27448,6 +27457,9 @@
         }
       }
     },
+    "List" : {
+
+    },
     "List all databases on the server" : {
 
     },
@@ -27778,6 +27790,9 @@
           }
         }
       }
+    },
+    "Loading schemas…" : {
+
     },
     "Loading tables..." : {
       "extractionState" : "stale",
@@ -30714,6 +30729,9 @@
     "No databases" : {
 
     },
+    "No Databases" : {
+
+    },
     "No databases found" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -30925,6 +30943,9 @@
           }
         }
       }
+    },
+    "No items" : {
+
     },
     "No keys" : {
       "localizations" : {
@@ -31603,6 +31624,9 @@
           }
         }
       }
+    },
+    "No schemas" : {
+
     },
     "No schemas found" : {
       "extractionState" : "stale",
@@ -43103,6 +43127,15 @@
         }
       }
     },
+    "Sidebar as List" : {
+
+    },
+    "Sidebar as Tree" : {
+
+    },
+    "Sidebar Layout" : {
+
+    },
     "Sidebar Panel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -48447,6 +48480,9 @@
         }
       }
     },
+    "This server has no databases yet." : {
+
+    },
     "This sets %lld loaded rows. Review and Save to apply." : {
 
     },
@@ -51189,6 +51225,12 @@
           }
         }
       }
+    },
+    "Use as Active Database" : {
+
+    },
+    "Use as Active Schema" : {
+
     },
     "Use clipboard URL" : {
 
