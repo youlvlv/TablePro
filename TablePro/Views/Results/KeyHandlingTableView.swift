@@ -10,6 +10,14 @@ final class KeyHandlingTableView: NSTableView {
         true
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard coordinator?.tabType == .table, let window,
+              let mainCoordinator = (coordinator?.delegate as? DataTabGridDelegate)?.coordinator,
+              mainCoordinator.consumePendingGridFocus() else { return }
+        window.makeFirstResponder(self)
+    }
+
     override func didAddSubview(_ subview: NSView) {
         super.didAddSubview(subview)
         guard !isRaisingOverlay else { return }
