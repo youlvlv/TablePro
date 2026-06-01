@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- iOS: open DuckDB database files and in-memory DuckDB databases, matching the Mac app. (#1526)
 - Save the current query as a favorite from a star button in the SQL editor toolbar.
 - Field names and types in the row Details panel can now be selected and copied.
 
