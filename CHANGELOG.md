@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The database plugin interface is now binary-stable. Adding plugin capabilities in a later release no longer forces installed plugins to be rebuilt; only a breaking interface change does.
 - Connection list rows show the database name after the host, so connections that share a name and host are easier to tell apart. (#1535)
 - Save as Favorite uses Cmd+D again. The Cmd+Control+D set in 0.47.0 is reserved by macOS for Look Up, so it never fired.
 - Editor toolbar buttons show their keyboard shortcut in the tooltip, and it updates if you rebind the shortcut.
