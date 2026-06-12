@@ -7,8 +7,42 @@
 //
 
 import Foundation
+import TableProPluginKit
+
+enum PostgreSQLSchemaProbe: Equatable {
+    case schema(String)
+    case empty
+    case failed
+}
 
 enum PostgreSQLSchemaQueries {
+    /// Returns the first schema on the effective search path, or SQL NULL
+    /// when the path is empty (neither `$user` nor `public` exists).
+    static let currentSchema = "SELECT current_schema()"
+
+    /// Like `current_schema()`, but resolves via `current_schemas(false)`,
+    /// which omits search path entries that do not correspond to existing,
+    /// searchable schemas.
+    static let firstSearchPathSchema = "SELECT current_schemas(false)[1]"
+
+    /// Queries tried in order when `current_schema()` resolves to NULL, so a
+    /// database without a `public` schema still gets a usable default schema
+    /// instead of silently showing no tables.
+    static let schemaFallbackQueries = [firstSearchPathSchema, listSchemas]
+
+    /// Redshift fallback: ends with the `USAGE`-filtered schema list so the
+    /// chosen default is one the connected role can actually read.
+    static let schemaFallbackQueriesRedshift = [firstSearchPathSchema, listSchemasRedshift]
+
+    /// Distinguishes a probe whose query failed (keep the prior schema, do
+    /// not fall back on a transient error) from one that succeeded with SQL
+    /// NULL (empty search path, try the next fallback query).
+    static func probe(rows: [[PluginCellValue]]?) -> PostgreSQLSchemaProbe {
+        guard let rows else { return .failed }
+        guard let schema = rows.first?.first?.asText, !schema.isEmpty else { return .empty }
+        return .schema(schema)
+    }
+
     /// Lists user-visible schemas, excluding PostgreSQL's built-in `pg_*`
     /// namespaces and `information_schema`.
     ///
@@ -78,9 +112,6 @@ enum PostgreSQLSchemaQueries {
 
     static func setSearchPath(toSchema schema: String) -> String {
         let quotedIdentifier = "\"\(schema.replacingOccurrences(of: "\"", with: "\"\""))\""
-        guard schema != "public" else {
-            return "SET search_path TO \(quotedIdentifier)"
-        }
-        return "SET search_path TO \(quotedIdentifier), public"
+        return "SET search_path TO \(quotedIdentifier)"
     }
 }
