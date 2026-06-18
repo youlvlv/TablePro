@@ -189,7 +189,7 @@ jobs:
               CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/mssql" ;;
             dameng)
               TARGET="DamengDriver"; BUNDLE_ID="com.TablePro.DamengDriver"
-              DISPLAY_NAME="Dameng Driver"; SUMMARY="Dameng DM database driver via ODBC"
+              DISPLAY_NAME="Dameng Driver"; SUMMARY="Dameng DM8 database driver via Go"
               DB_TYPE_IDS='["Dameng"]'; ICON="dameng-icon"; BUNDLE_NAME="DamengDriver"
               CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/dameng" ;;
             mongodb)
@@ -284,6 +284,16 @@ jobs:
       - name: Build Cassandra dependencies
         if: ${{ contains(matrix.tag, 'plugin-cassandra-') }}
         run: ./scripts/build-cassandra.sh both
+
+      - name: Install Go
+        if: ${{ contains(matrix.tag, 'plugin-dameng-') }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Dameng Go library
+        if: ${{ contains(matrix.tag, 'plugin-dameng-') }}
+        run: ./scripts/build-dameng-go.sh
 
       - name: Build plugin binaries
         env:

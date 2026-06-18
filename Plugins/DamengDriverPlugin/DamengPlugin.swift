@@ -12,7 +12,7 @@ import TableProPluginKit
 final class DamengPlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnosticProvider {
     static let pluginName = "Dameng Driver"
     static let pluginVersion = "1.0.0"
-    static let pluginDescription = "Dameng Database support via ODBC"
+    static let pluginDescription = "Dameng Database support via Go DM8 driver"
     static let capabilities: [PluginCapability] = [.databaseDriver]
 
     static let databaseTypeId = "Dameng"
@@ -20,19 +20,6 @@ final class DamengPlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnost
     static let iconName = "dameng-icon"
     static let defaultPort = 5236
     static let additionalConnectionFields: [ConnectionField] = [
-        ConnectionField(
-            id: "damengDriverPath",
-            label: "ODBC Driver Path",
-            placeholder: "/Library/DMDBMS/bin/libdodbc.dylib",
-            defaultValue: "/Library/DMDBMS/bin/libdodbc.dylib",
-            section: .advanced
-        ),
-        ConnectionField(
-            id: "damengManagerPath",
-            label: "ODBC Manager Path (optional)",
-            placeholder: "/opt/homebrew/lib/libodbc.dylib",
-            section: .advanced
-        ),
         ConnectionField(
             id: "damengSchema",
             label: "Default Schema",
@@ -127,28 +114,6 @@ final class DamengPlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnost
         let issuesURL = URL(string: "https://github.com/TableProApp/TablePro/issues")
 
         switch damengError.category {
-        case .driverManagerNotFound:
-            return PluginDiagnostic(
-                title: String(localized: "ODBC Driver Manager Not Found"),
-                message: damengError.message,
-                suggestedActions: [
-                    String(localized: "Install unixODBC or iODBC. On Apple Silicon Macs: brew install unixodbc"),
-                    String(localized: "If the manager is installed in a custom location, provide it in the connection's advanced settings."),
-                    String(localized: "Restart TablePro after installing the driver manager.")
-                ],
-                supportURL: issuesURL
-            )
-        case .driverNotFound:
-            return PluginDiagnostic(
-                title: String(localized: "Dameng ODBC Driver Not Found"),
-                message: damengError.message,
-                suggestedActions: [
-                    String(localized: "Install the Dameng database client for your platform."),
-                    String(localized: "Verify the path in the ODBC Driver Path advanced setting matches libdodbc.dylib on this Mac."),
-                    String(localized: "On Apple Silicon, you may need to run the driver under Rosetta or use an x86_64 Mac.")
-                ],
-                supportURL: issuesURL
-            )
         case .authenticationFailed:
             return PluginDiagnostic(
                 title: String(localized: "Authentication Failed"),
@@ -165,8 +130,7 @@ final class DamengPlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnost
                 message: damengError.message,
                 suggestedActions: [
                     String(localized: "Confirm the host and port (default 5236) are correct."),
-                    String(localized: "Check that the Dameng service is running and the network path is open."),
-                    String(localized: "Verify the ODBC driver manager and Dameng driver are installed.")
+                    String(localized: "Check that the Dameng service is running and the network path is open.")
                 ],
                 supportURL: issuesURL
             )
@@ -228,16 +192,12 @@ final class DamengPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     // MARK: - Connection
 
     func connect() async throws {
-        let driverPath = config.additionalFields["damengDriverPath"] ?? "/Library/DMDBMS/bin/libdodbc.dylib"
-        let managerPath = config.additionalFields["damengManagerPath"]
         let conn = DamengConnectionWrapper(
             host: config.host,
             port: config.port,
             user: config.username,
             password: config.password,
-            database: config.database,
-            driverPath: driverPath,
-            managerPath: managerPath
+            database: config.database
         )
         try await conn.connect()
         self.damengConn = conn
@@ -247,13 +207,13 @@ final class DamengPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             try? await switchSchema(to: schema)
         }
 
-        if let current = try? await currentSchemaQuery() {
+        if let current = conn.fetchCurrentSchema() {
             _currentSchema = current
         } else {
             _currentSchema = config.username.uppercased()
         }
 
-        if let version = try? await versionQuery() {
+        if let version = conn.fetchVersion() {
             _serverVersion = String(version.prefix(60))
         }
     }
@@ -270,8 +230,7 @@ final class DamengPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     // MARK: - Transaction Management
 
     func beginTransaction() async throws {
-        // ODBC defaults to auto-commit; disable it when a transaction is requested.
-        // Dameng supports implicit transactions, so no explicit BEGIN is required.
+        try await damengConn?.beginTransaction()
     }
 
     func commitTransaction() async throws {
@@ -1073,18 +1032,6 @@ final class DamengPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     // MARK: - Private Helpers
-
-    private func currentSchemaQuery() async throws -> String? {
-        let sql = "SELECT CURRENT_SCHEMA()"
-        let result = try await execute(query: sql)
-        return result.rows.first?.first?.asText
-    }
-
-    private func versionQuery() async throws -> String? {
-        let sql = "SELECT BANNER FROM V$VERSION WHERE ROWNUM = 1"
-        let result = try await execute(query: sql)
-        return result.rows.first?.first?.asText
-    }
 
     private func effectiveSchemaEscaped(_ schema: String?) -> String {
         let raw = schema ?? _currentSchema ?? config.username.uppercased()

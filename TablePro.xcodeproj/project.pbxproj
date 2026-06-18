@@ -3194,26 +3194,27 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/Plugins/DamengDriverPlugin/CODBC/include",
-					/opt/homebrew/include,
-					/usr/local/include,
+					"$(SRCROOT)/Plugins/DamengDriverPlugin/CDamengGo/include",
 				);
 				INFOPLIST_FILE = Plugins/DamengDriverPlugin/Info.plist;
 				INFOPLIST_KEY_NSPrincipalClass = "$(PRODUCT_MODULE_NAME).DamengPlugin";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/opt/homebrew/lib,
-					/usr/local/lib,
+					"$(PROJECT_DIR)/Libs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-force_load",
+					"$(PROJECT_DIR)/Libs/libdamenggo.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro.DamengDriver;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
-				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Plugins/DamengDriverPlugin/CODBC";
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Plugins/DamengDriverPlugin/CDamengGo";
 				SWIFT_VERSION = 5.9;
 				WRAPPER_EXTENSION = tableplugin;
 			};
@@ -3229,26 +3230,27 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/Plugins/DamengDriverPlugin/CODBC/include",
-					/opt/homebrew/include,
-					/usr/local/include,
+					"$(SRCROOT)/Plugins/DamengDriverPlugin/CDamengGo/include",
 				);
 				INFOPLIST_FILE = Plugins/DamengDriverPlugin/Info.plist;
 				INFOPLIST_KEY_NSPrincipalClass = "$(PRODUCT_MODULE_NAME).DamengPlugin";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/opt/homebrew/lib,
-					/usr/local/lib,
+					"$(PROJECT_DIR)/Libs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-force_load",
+					"$(PROJECT_DIR)/Libs/libdamenggo.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro.DamengDriver;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
-				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Plugins/DamengDriverPlugin/CODBC";
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Plugins/DamengDriverPlugin/CDamengGo";
 				SWIFT_VERSION = 5.9;
 				WRAPPER_EXTENSION = tableplugin;
 			};

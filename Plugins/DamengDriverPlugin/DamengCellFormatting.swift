@@ -2,7 +2,7 @@
 //  DamengCellFormatting.swift
 //  TablePro
 //
-//  Helpers for rendering Dameng/ODBC cell values as strings.
+//  Helpers for rendering Dameng cell values as strings.
 //
 
 import Foundation
@@ -53,8 +53,7 @@ enum DamengCellFormatting {
         return prefix.map { String(format: "%02x", $0) }.joined()
     }
 
-    /// Parses common ODBC date/time string representations.
-    static func parseODBCDate(_ string: String) -> Date? {
+    static func parseDate(_ string: String) -> Date? {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         let parsers: [DateFormatter] = [
             isoTimestampFormatter,

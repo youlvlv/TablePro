@@ -1,10 +1,3 @@
-//
-//  DamengError.swift
-//  TablePro
-//
-//  Error type for the Dameng ODBC driver plugin.
-//
-
 import Foundation
 import TableProPluginKit
 
@@ -14,8 +7,6 @@ struct DamengError: Error {
         case notConnected
         case connectionFailed
         case queryFailed
-        case driverManagerNotFound
-        case driverNotFound
         case authenticationFailed
     }
 
