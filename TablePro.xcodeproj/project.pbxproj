@@ -2018,6 +2018,7 @@
 				tr,
 				vi,
 				"zh-Hans",
+				"zh-Hant",
 				Base,
 			);
 			mainGroup = 5A1091BE2EF17EDC0055EA7C;
