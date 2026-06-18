@@ -173,6 +173,11 @@ jobs:
               DISPLAY_NAME="MSSQL Driver"; SUMMARY="Microsoft SQL Server driver via FreeTDS"
               DB_TYPE_IDS='["SQL Server"]'; ICON="mssql-icon"; BUNDLE_NAME="MSSQLDriver"
               CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/mssql" ;;
+            dameng)
+              TARGET="DamengDriver"; BUNDLE_ID="com.TablePro.DamengDriver"
+              DISPLAY_NAME="Dameng Driver"; SUMMARY="Dameng DM database driver via ODBC"
+              DB_TYPE_IDS='["Dameng"]'; ICON="dameng-icon"; BUNDLE_NAME="DamengDriver"
+              CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/dameng" ;;
             mongodb)
               TARGET="MongoDBDriver"; BUNDLE_ID="com.TablePro.MongoDBDriver"
               DISPLAY_NAME="MongoDB Driver"; SUMMARY="MongoDB document database driver via libmongoc"
