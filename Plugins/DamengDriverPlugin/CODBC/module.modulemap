@@ -1,0 +1,4 @@
+module CODBC [system] {
+    header "CODBC.h"
+    export *
+}
