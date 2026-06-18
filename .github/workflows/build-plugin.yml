@@ -102,7 +102,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: scripts/download-libs.sh
 
+      - name: Determine signing mode
+        id: signing
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
+        run: |
+          if [ -n "$CERTIFICATES_P12" ]; then
+            echo "mode=developer-id" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=adhoc" >> "$GITHUB_OUTPUT"
+            echo "::warning::CERTIFICATES_P12 not set; using ad-hoc signing (test only)"
+          fi
+
       - name: Import signing certificate
+        if: ${{ steps.signing.outputs.mode == 'developer-id' }}
         env:
           CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
           CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
@@ -118,6 +131,7 @@ jobs:
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
 
       - name: Configure notarization
+        if: ${{ steps.signing.outputs.mode == 'developer-id' }}
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -273,7 +287,8 @@ jobs:
 
       - name: Build plugin binaries
         env:
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_ID: ${{ steps.signing.outputs.mode == 'developer-id' && secrets.APPLE_TEAM_ID || '' }}
+          SIGN_IDENTITY: ${{ steps.signing.outputs.mode == 'adhoc' && '-' || '' }}
         run: |
           ./scripts/build-plugin.sh "${{ steps.plugin.outputs.target }}" arm64 "${{ steps.plugin.outputs.version }}"
           ./scripts/build-plugin.sh "${{ steps.plugin.outputs.target }}" x86_64 "${{ steps.plugin.outputs.version }}"
