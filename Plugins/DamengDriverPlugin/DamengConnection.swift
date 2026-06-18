@@ -50,8 +50,8 @@ final class DamengConnectionWrapper: @unchecked Sendable {
     private let database: String
     private let schema: String?
 
-    private var connHandle: OpaquePointer?
-    private var txHandle: OpaquePointer?
+    private var connHandle: UnsafeMutableRawPointer?
+    private var txHandle: UnsafeMutableRawPointer?
     private let queryGate = QueryGate()
 
     init(
@@ -91,19 +91,16 @@ final class DamengConnectionWrapper: @unchecked Sendable {
 
     private func connectSync() throws {
         let dsn = buildDSN()
-        let cDSN = dsn.cString(using: .utf8) ?? []
+        var cDSN = dsn.cString(using: .utf8) ?? []
 
-        let result = cDSN.withUnsafeBufferPointer { buf -> (OpaquePointer?, String?) in
-            let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: buf.count)
-            defer { ptr.deallocate() }
-            buf.copyBytes(to: ptr)
-            let ret = DamengOpen(ptr)
+        let result = cDSN.withUnsafeMutableBufferPointer { buf -> (UnsafeMutableRawPointer?, String?) in
+            let ret = DamengOpen(buf.baseAddress)
             if let err = ret.r1 {
                 let msg = String(cString: err)
                 DamengFreeString(err)
                 return (nil, msg)
             }
-            return (OpaquePointer(ret.r0), nil)
+            return (ret.r0, nil)
         }
 
         if let error = result.1 {
@@ -118,7 +115,7 @@ final class DamengConnectionWrapper: @unchecked Sendable {
         log.debug("Connected to Dameng \(self.host):\(self.port)")
     }
 
-    private func buildDSN() String {
+    private func buildDSN() -> String {
         var dsn = "dm://\(user):\(password)@\(host):\(port)"
         if !database.isEmpty {
             dsn += "/\(database)"
@@ -162,20 +159,17 @@ final class DamengConnectionWrapper: @unchecked Sendable {
         }
     }
 
-    private func executeQuerySync(_ query: String, handle: OpaquePointer, rowCap: Int?) throws -> DamengQueryResult {
-        let cQuery = query.cString(using: .utf8) ?? []
+    private func executeQuerySync(_ query: String, handle: UnsafeMutableRawPointer, rowCap: Int?) throws -> DamengQueryResult {
+        var cQuery = query.cString(using: .utf8) ?? []
 
-        let rowsResult = cQuery.withUnsafeBufferPointer { buf -> (OpaquePointer?, String?) in
-            let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: buf.count)
-            defer { ptr.deallocate() }
-            buf.copyBytes(to: ptr)
-            let ret = DamengQuery(handle, ptr)
+        let rowsResult = cQuery.withUnsafeMutableBufferPointer { buf -> (UnsafeMutableRawPointer?, String?) in
+            let ret = DamengQuery(handle, buf.baseAddress)
             if let err = ret.r1 {
                 let msg = String(cString: err)
                 DamengFreeString(err)
                 return (nil, msg)
             }
-            return (OpaquePointer(ret.r0), nil)
+            return (ret.r0, nil)
         }
 
         if let error = rowsResult.1 {
@@ -205,7 +199,7 @@ final class DamengConnectionWrapper: @unchecked Sendable {
         var columnTypeNames: [String] = []
 
         if let namesPtr = DamengRowsColumnNames(rowsHandle) {
-            let nameSlice = UnsafeBufferPointer(start: namesPtr, count: columnCount)
+            let nameSlice = UnsafeBufferPointer<UnsafeMutablePointer<CChar>?>(start: namesPtr, count: columnCount)
             for i in 0..<columnCount {
                 if let ptr = nameSlice[i] {
                     columns.append(String(cString: ptr))
@@ -217,7 +211,7 @@ final class DamengConnectionWrapper: @unchecked Sendable {
         }
 
         if let typesPtr = DamengRowsColumnTypeNames(rowsHandle) {
-            let typeSlice = UnsafeBufferPointer(start: typesPtr, count: columnCount)
+            let typeSlice = UnsafeBufferPointer<UnsafeMutablePointer<CChar>?>(start: typesPtr, count: columnCount)
             for i in 0..<columnCount {
                 if let ptr = typeSlice[i] {
                     columnTypeNames.append(String(cString: ptr))
@@ -248,7 +242,7 @@ final class DamengConnectionWrapper: @unchecked Sendable {
             }
 
             var row: [PluginCellValue] = []
-            let valSlice = UnsafeBufferPointer(start: valuesPtr, count: columnCount)
+            let valSlice = UnsafeBufferPointer<UnsafeMutablePointer<CChar>?>(start: valuesPtr, count: columnCount)
             for i in 0..<columnCount {
                 if let ptr = valSlice[i] {
                     row.append(.text(String(cString: ptr)))
@@ -281,12 +275,9 @@ final class DamengConnectionWrapper: @unchecked Sendable {
 
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int, Error>) in
             DispatchQueue.global(qos: .userInitiated).async {
-                let cSQL = sql.cString(using: .utf8) ?? []
-                let result = cSQL.withUnsafeBufferPointer { buf -> (Int64, String?) in
-                    let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: buf.count)
-                    defer { ptr.deallocate() }
-                    buf.copyBytes(to: ptr)
-                    let ret = DamengExec(handle, ptr)
+                var cSQL = sql.cString(using: .utf8) ?? []
+                let result = cSQL.withUnsafeMutableBufferPointer { buf -> (Int64, String?) in
+                    let ret = DamengExec(handle, buf.baseAddress)
                     if let err = ret.r1 {
                         let msg = String(cString: err)
                         DamengFreeString(err)
@@ -317,7 +308,7 @@ final class DamengConnectionWrapper: @unchecked Sendable {
             DamengFreeString(err)
             throw DamengError(message: msg, category: .queryFailed)
         }
-        txHandle = OpaquePointer(result.r0)
+        txHandle = result.r0
     }
 
     func commit() async throws {
@@ -384,12 +375,9 @@ final class DamengConnectionWrapper: @unchecked Sendable {
         guard let handle = connHandle else {
             throw DamengError.notConnected
         }
-        let cSchema = schema.cString(using: .utf8) ?? []
-        cSchema.withUnsafeBufferPointer { buf in
-            let ptr = UnsafeMutablePointer<CChar>.allocate(capacity: buf.count)
-            defer { ptr.deallocate() }
-            buf.copyBytes(to: ptr)
-            if let err = DamengSetSchema(handle, ptr) {
+        var cSchema = schema.cString(using: .utf8) ?? []
+        cSchema.withUnsafeMutableBufferPointer { buf in
+            if let err = DamengSetSchema(handle, buf.baseAddress) {
                 let msg = String(cString: err)
                 DamengFreeString(err)
                 log.debug("Set schema error: \(msg)")

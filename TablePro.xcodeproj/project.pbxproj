@@ -450,6 +450,10 @@
 		5A87D000900000000 /* Exceptions for "Plugins/DamengDriverPlugin" folder in "DamengDriver" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CDamengGo/damenggo/dm/go.mod,
+				CDamengGo/damenggo/dm/go.sum,
+				CDamengGo/damenggo/go.mod,
+				CDamengGo/damenggo/go.sum,
 				Info.plist,
 			);
 			target = 5A87D000000000000 /* DamengDriver */;
