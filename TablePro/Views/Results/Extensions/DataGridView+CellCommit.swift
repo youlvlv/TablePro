@@ -21,19 +21,11 @@ extension TableViewCoordinator {
         invalidateDisplayCache()
         visualIndex.updateRow(row, from: changeManager, sortedIDs: sortedIDs)
 
-        guard let tableColumnIndex = DataGridView.tableColumnIndex(
-            for: columnIndex,
-            in: tableView,
-            schema: identitySchema
-        ) else { return }
-        if case .cellChanged = delta {
-            tableRowsController.apply(.cellChanged(row: row, column: tableColumnIndex))
-        } else {
-            tableView.reloadData(
-                forRowIndexes: IndexSet(integer: row),
-                columnIndexes: IndexSet(integer: tableColumnIndex)
-            )
-        }
+        guard let tableColumnIndex = tableColumnIndex(for: columnIndex) else { return }
+        tableView.reloadData(
+            forRowIndexes: IndexSet(integer: row),
+            columnIndexes: IndexSet(integer: tableColumnIndex)
+        )
     }
 
     @discardableResult

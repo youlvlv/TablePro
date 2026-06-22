@@ -24,6 +24,7 @@ struct OracleError: Error {
         case notConnected
         case connectionFailed
         case queryFailed
+        case protocolError
         case authVerifierUnsupported(flag: String)
         case authVersionNotSupported
         case authConnectionDropped
@@ -191,7 +192,7 @@ final class OracleConnectionWrapper: @unchecked Sendable {
         } catch let sqlError as OracleSQLError {
             let detail = Self.connectFailureDetail(sqlError)
             osLogger.error("Oracle connection failed: \(detail)")
-            if let sslError = Self.classifySSLError(detail) {
+            if let sslError = OracleSSLClassifier.classifySSLError(detail) {
                 throw sslError
             }
             let category = classifyConnectError(sqlError)
@@ -202,34 +203,16 @@ final class OracleConnectionWrapper: @unchecked Sendable {
         } catch let nioSslError as NIOSSLError {
             let detail = String(describing: nioSslError)
             osLogger.error("Oracle TLS error: \(detail)")
-            throw Self.classifySSLError(detail) ?? SSLHandshakeError.unknown(serverMessage: detail)
+            throw OracleSSLClassifier.classifySSLError(detail) ?? SSLHandshakeError.unknown(serverMessage: detail)
         } catch {
             let detail = String(describing: error)
             osLogger.error("Oracle connection failed: \(detail)")
-            if let sslError = Self.classifySSLError(detail) {
+            if let sslError = OracleSSLClassifier.classifySSLError(detail) {
                 throw sslError
             }
             throw OracleError(message: detail, category: .connectionFailed)
         }
     }
-
-    static func classifySSLError(_ message: String) -> SSLHandshakeError? {
-        let lower = message.lowercased()
-        if lower.contains("ora-28759") || lower.contains("failure to open file") && lower.contains("wallet") {
-            return .clientCertRequired(serverMessage: message)
-        }
-        if lower.contains("ora-29024") {
-            return .cipherMismatch(serverMessage: message)
-        }
-        if lower.contains("ora-28860") {
-            return .cipherMismatch(serverMessage: message)
-        }
-        if lower.contains("certificate") && (lower.contains("verify") || lower.contains("untrusted")) {
-            return .untrustedCertificate(serverMessage: message)
-        }
-        return nil
-    }
-
 
     private func classifyConnectError(_ error: OracleSQLError) -> OracleError.Category {
         let codeDescription = error.code.description
@@ -264,9 +247,28 @@ final class OracleConnectionWrapper: @unchecked Sendable {
             return String(localized: "The Oracle server closed the connection during the login handshake.")
         case .authVerifierUnsupported:
             return String(localized: "This account uses a password verifier the database driver does not support.")
-        case .generic, .notConnected, .connectionFailed, .queryFailed:
+        case .generic, .notConnected, .connectionFailed, .queryFailed, .protocolError:
             return serverDetail
         }
+    }
+
+    private func mapQueryError(_ sqlError: OracleSQLError) -> OracleError {
+        guard Self.isChannelFatal(sqlError) else {
+            return OracleError(message: sqlError.serverInfo?.message ?? sqlError.description)
+        }
+        state.withLock { current in
+            current.isConnected = false
+            current.nioConnection = nil
+        }
+        osLogger.error("Oracle connection reset after fatal protocol error: \(sqlError.code.description)")
+        return OracleError(
+            message: String(localized: "The server sent an unexpected message and the connection was reset. Run the query again."),
+            category: .protocolError
+        )
+    }
+
+    private static func isChannelFatal(_ error: OracleSQLError) -> Bool {
+        OracleChannelFatalCode.isChannelFatal(error.code.description)
     }
 
     func disconnect() {
@@ -352,9 +354,8 @@ final class OracleConnectionWrapper: @unchecked Sendable {
                 isTruncated: truncated
             )
         } catch let sqlError as OracleSQLError {
-            let detail = sqlError.serverInfo?.message ?? sqlError.description
             await queryGate.release()
-            throw OracleError(message: detail)
+            throw mapQueryError(sqlError)
         } catch let error as OracleError {
             await queryGate.release()
             throw error
@@ -438,9 +439,8 @@ final class OracleConnectionWrapper: @unchecked Sendable {
             await queryGate.release()
             continuation.finish()
         } catch let sqlError as OracleSQLError {
-            let detail = sqlError.serverInfo?.message ?? sqlError.description
             await queryGate.release()
-            throw OracleError(message: detail)
+            throw mapQueryError(sqlError)
         } catch is CancellationError {
             await queryGate.release()
             throw CancellationError()

@@ -93,7 +93,6 @@ extension MainContentCoordinator {
             return
         }
 
-        // If no tabs exist (empty state), add a table tab directly.
         if tabManager.tabs.isEmpty {
             addFirstTableTab(
                 tableName: tableName,
@@ -383,19 +382,21 @@ extension MainContentCoordinator {
     }
 
     /// Switch to a different database (called from database switcher)
-    func switchDatabase(to database: String) async {
-        clearFilterState()
+    func switchDatabase(to database: String, clearTabs: Bool = true) async {
+        if clearTabs { clearFilterState() }
         let previousDatabase = toolbarState.currentDatabase
         toolbarState.currentDatabase = database
 
         do {
             try await DatabaseManager.shared.switchDatabase(to: database, for: connectionId)
 
-            closeSiblingNativeWindows()
-            persistence.saveNowSync(tabs: tabManager.tabs, selectedTabId: tabManager.selectedTabId)
-            tabSessionRegistry.removeAll()
-            tabManager.tabs = []
-            tabManager.selectedTabId = nil
+            if clearTabs {
+                closeSiblingNativeWindows()
+                persistence.saveNowSync(tabs: tabManager.tabs, selectedTabId: tabManager.selectedTabId)
+                tabSessionRegistry.removeAll()
+                tabManager.tabs = []
+                tabManager.selectedTabId = nil
+            }
             await SchemaService.shared.invalidate(connectionId: connectionId)
 
             await refreshTables()

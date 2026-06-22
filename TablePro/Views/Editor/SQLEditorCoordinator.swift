@@ -201,7 +201,6 @@ final class SQLEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         vimEngine = nil
         vimCursorManager = nil
 
-        // Release editor controller heavy state
         controller?.releaseHeavyState()
 
         EditorEventRouter.shared.unregister(self)
@@ -220,6 +219,10 @@ final class SQLEditorCoordinator: TextViewCoordinator, TextViewDelegate {
         }
         if inlineSuggestionManager == nil, let controller {
             installInlineSuggestionManager(controller: controller)
+        }
+        if let controller {
+            installEditorSettingsObserver(controller: controller)
+            installWindowKeyObserver(for: controller.textView?.window)
         }
     }
 

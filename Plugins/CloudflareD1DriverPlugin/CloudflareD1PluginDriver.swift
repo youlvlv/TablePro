@@ -80,7 +80,7 @@ final class CloudflareD1PluginDriver: PluginDatabaseDriver, @unchecked Sendable 
 
             guard let match = databases.first(where: { $0.name == databaseName }) else {
                 throw CloudflareD1Error(
-                    message: String(localized: "Database '\(databaseName)' not found in account")
+                    message: String(format: String(localized: "Database '%@' not found in account"), databaseName)
                 )
             }
             databaseId = match.uuid
@@ -454,6 +454,20 @@ final class CloudflareD1PluginDriver: PluginDatabaseDriver, @unchecked Sendable 
         }
     }
 
+    func createTriggerTemplate(table: String, schema: String?) -> String? {
+        """
+        CREATE TRIGGER \(quoteIdentifier("trigger_name"))
+        AFTER INSERT ON \(quoteIdentifier(table))
+        BEGIN
+            -- INSERT INTO audit ...;
+        END;
+        """
+    }
+
+    func generateDropTriggerSQL(name: String, table: String, schema: String?) -> String? {
+        "DROP TRIGGER IF EXISTS \(quoteIdentifier(name))"
+    }
+
     func fetchTableDDL(table: String, schema: String?) async throws -> String {
         let safeTable = escapeStringLiteral(table)
         let query = """
@@ -589,7 +603,7 @@ final class CloudflareD1PluginDriver: PluginDatabaseDriver, @unchecked Sendable 
 
         guard let resolvedUuid = uuid else {
             throw CloudflareD1Error(
-                message: String(localized: "Database '\(database)' not found")
+                message: String(format: String(localized: "Database '%@' not found"), database)
             )
         }
 

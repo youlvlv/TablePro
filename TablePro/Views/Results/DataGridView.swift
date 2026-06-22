@@ -109,7 +109,6 @@ struct DataGridView: NSViewRepresentable {
         context.coordinator.tableView = tableView
         installSelectionOverlay(tableView: tableView, coordinator: context.coordinator)
         context.coordinator.attachScrollObservers(scrollView: scrollView)
-        context.coordinator.tableRowsController.attach(tableView)
         context.coordinator.tableRowsProvider = tableRowsProvider
         context.coordinator.tableRowsMutator = tableRowsMutator
         context.coordinator.paginationOffsetProvider = paginationOffsetProvider
@@ -272,6 +271,7 @@ struct DataGridView: NSViewRepresentable {
                 savedLayout: savedLayout
             )
             coordinator.isRebuildingColumns = false
+            coordinator.invalidateColumnIndexCache()
 
             if savedLayout == nil {
                 coordinator.scheduleLayoutPersist()
@@ -401,16 +401,6 @@ struct DataGridView: NSViewRepresentable {
         tableColumnIndex >= firstDataTableColumnIndex
     }
 
-    static func tableColumnIndex(
-        for dataIndex: Int,
-        in tableView: NSTableView,
-        schema: ColumnIdentitySchema
-    ) -> Int? {
-        guard let identifier = schema.identifier(for: dataIndex) else { return nil }
-        let index = tableView.column(withIdentifier: identifier)
-        return index >= 0 ? index : nil
-    }
-
     static func dataColumnIndex(
         for tableColumnIndex: Int,
         in tableView: NSTableView,
@@ -426,7 +416,6 @@ struct DataGridView: NSViewRepresentable {
         coordinator.persistColumnLayoutToStorage()
         coordinator.settingsCancellable = nil
         coordinator.themeCancellable = nil
-        coordinator.tableRowsController.detach()
     }
 
     func makeCoordinator() -> TableViewCoordinator {

@@ -38,6 +38,27 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     private(set) var identitySchema: ColumnIdentitySchema = .empty
     var currentSortState = SortState()
 
+    private var columnIndexByDataIndex: [Int: Int] = [:]
+    private static let selectionCacheLogger = Logger(subsystem: "com.TablePro", category: "DataGrid.ColumnIndexCache")
+
+    func tableColumnIndex(for dataIndex: Int) -> Int? {
+        if let cached = columnIndexByDataIndex[dataIndex] {
+            return cached
+        }
+        guard let tableView,
+              let identifier = identitySchema.identifier(for: dataIndex) else { return nil }
+        let resolved = tableView.column(withIdentifier: identifier)
+        guard resolved >= 0 else { return nil }
+        columnIndexByDataIndex[dataIndex] = resolved
+        return resolved
+    }
+
+    func invalidateColumnIndexCache() {
+        guard !columnIndexByDataIndex.isEmpty else { return }
+        Self.selectionCacheLogger.debug("invalidate column index cache (had \(self.columnIndexByDataIndex.count))")
+        columnIndexByDataIndex.removeAll()
+    }
+
     func columnIdentifier(for dataIndex: Int) -> NSUserInterfaceItemIdentifier? {
         identitySchema.identifier(for: dataIndex)
     }
@@ -109,7 +130,6 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     let cellFactory = DataGridCellFactory()
     let cellRegistry: DataGridCellRegistry
     let columnPool = DataGridColumnPool()
-    let tableRowsController = TableRowsController()
     let selectionController = GridSelectionController()
     var overlayEditor: CellOverlayEditor?
     var overlayViewer: CellOverlayViewer?
@@ -225,6 +245,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         columnDisplayFormats = []
         cachedRowCount = 0
         cachedColumnCount = 0
+        invalidateColumnIndexCache()
         sortedIDs = nil
         lastUpdateSnapshot = nil
         columnPool.detachFromTableView()
@@ -234,7 +255,6 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             }
             tableView.reloadData()
         }
-        tableRowsController.detach()
         delegate = nil
         activeFKPreviewPopover?.close()
         clearFKPreviewState()
@@ -479,7 +499,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         switch delta {
         case .cellChanged(let row, let column):
             guard let tableView,
-                  let tableColumn = DataGridView.tableColumnIndex(for: column, in: tableView, schema: identitySchema)
+                  let tableColumn = tableColumnIndex(for: column)
             else { return }
             guard row >= 0, row < tableView.numberOfRows else { return }
             invalidateDisplayCache(forDisplayRow: row, column: column)
@@ -496,11 +516,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
                 if position.row >= 0, position.row < tableView.numberOfRows {
                     rowSet.insert(position.row)
                 }
-                if let tableColumn = DataGridView.tableColumnIndex(
-                    for: position.column,
-                    in: tableView,
-                    schema: identitySchema
-                ) {
+                if let tableColumn = tableColumnIndex(for: position.column) {
                     colSet.insert(tableColumn)
                 }
                 invalidateDisplayCache(forDisplayRow: position.row, column: position.column)
@@ -622,7 +638,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
     func beginEditing(displayRow: Int, column: Int) {
         guard let tableView,
-              let displayCol = DataGridView.tableColumnIndex(for: column, in: tableView, schema: identitySchema)
+              let displayCol = tableColumnIndex(for: column)
         else { return }
         guard displayRow >= 0, displayRow < tableView.numberOfRows else { return }
         tableView.scrollRowToVisible(displayRow)
@@ -668,6 +684,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         guard schemaChanged else { return false }
         identitySchema = nextSchema
         displayCache.removeAll()
+        invalidateColumnIndexCache()
         return true
     }
 
@@ -713,7 +730,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     // MARK: - NSTableViewDataSource
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        sortedIDs?.count ?? tableRowsProvider().count
+        sortedIDs?.count ?? cachedRowCount
     }
 }
 
@@ -730,11 +747,7 @@ extension TableViewCoordinator: DataGridCellAccessoryDelegate {
 
     func dataGridCellDidDoubleClick(row: Int, columnIndex: Int) {
         guard row >= 0, columnIndex >= 0, let tableView else { return }
-        guard let tableColumn = DataGridView.tableColumnIndex(
-            for: columnIndex,
-            in: tableView,
-            schema: identitySchema
-        ) else { return }
+        guard let tableColumn = tableColumnIndex(for: columnIndex) else { return }
         handleCellInteraction(row: row, tableColumn: tableColumn, columnIndex: columnIndex, tableView: tableView)
     }
 }

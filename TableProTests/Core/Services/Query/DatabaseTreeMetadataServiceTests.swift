@@ -1,8 +1,10 @@
 import Foundation
 @testable import TablePro
+import TableProPluginKit
 import Testing
 
 @Suite("DatabaseTreeMetadataService")
+@MainActor
 struct DatabaseTreeMetadataServiceTests {
     private typealias ObjectsKey = DatabaseTreeMetadataService.ObjectsKey
 
@@ -50,5 +52,84 @@ struct DatabaseTreeMetadataServiceTests {
         )
 
         #expect(keys == [mine])
+    }
+}
+
+@Suite("DatabaseTreeMetadataService refreshLoadedTables")
+@MainActor
+struct DatabaseTreeMetadataServiceRefreshTests {
+    @Test("reload drops previously loaded tables and refetches the current list")
+    func refreshReloadsLoadedTables() async {
+        let connection = TestFixtures.makeConnection()
+        let driver = MockDatabaseDriver(connection: connection)
+        driver.schemaTablesToReturn = ["public": [TestFixtures.makeTableInfo(name: "users")]]
+
+        var session = ConnectionSession(connection: connection, driver: driver)
+        session.status = .connected
+        DatabaseManager.shared.injectSession(session, for: connection.id)
+
+        let service = DatabaseTreeMetadataService.shared
+        let database = connection.database
+
+        await service.loadTables(connectionId: connection.id, database: database, schema: "public")
+        let initial = service.tables(connectionId: connection.id, database: database, schema: "public")
+        #expect(initial.map(\.name) == ["users"])
+
+        driver.schemaTablesToReturn = ["public": []]
+        await service.refreshLoadedTables(connectionId: connection.id)
+
+        let refreshed = service.tables(connectionId: connection.id, database: database, schema: "public")
+        #expect(refreshed.isEmpty)
+
+        await service.handleDisconnect(connectionId: connection.id)
+        DatabaseManager.shared.removeSession(for: connection.id)
+    }
+
+    @Test("reload refetches every loaded schema, not just the one that changed")
+    func refreshReloadsAllLoadedSchemas() async {
+        let connection = TestFixtures.makeConnection()
+        let driver = MockDatabaseDriver(connection: connection)
+        driver.schemaTablesToReturn = [
+            "public": [TestFixtures.makeTableInfo(name: "users")],
+            "sales": [TestFixtures.makeTableInfo(name: "orders")]
+        ]
+
+        var session = ConnectionSession(connection: connection, driver: driver)
+        session.status = .connected
+        DatabaseManager.shared.injectSession(session, for: connection.id)
+
+        let service = DatabaseTreeMetadataService.shared
+        let database = connection.database
+
+        await service.loadTables(connectionId: connection.id, database: database, schema: "public")
+        await service.loadTables(connectionId: connection.id, database: database, schema: "sales")
+
+        driver.schemaTablesToReturn = [
+            "public": [],
+            "sales": [TestFixtures.makeTableInfo(name: "orders"), TestFixtures.makeTableInfo(name: "invoices")]
+        ]
+        await service.refreshLoadedTables(connectionId: connection.id)
+
+        let publicTables = service.tables(connectionId: connection.id, database: database, schema: "public")
+        let salesTables = service.tables(connectionId: connection.id, database: database, schema: "sales")
+        #expect(publicTables.isEmpty)
+        #expect(salesTables.map(\.name) == ["orders", "invoices"])
+
+        await service.handleDisconnect(connectionId: connection.id)
+        DatabaseManager.shared.removeSession(for: connection.id)
+    }
+
+    @Test("refresh is a no-op when no tables are loaded for the connection")
+    func refreshWithoutLoadedTablesIsNoOp() async {
+        let connection = TestFixtures.makeConnection()
+
+        await DatabaseTreeMetadataService.shared.refreshLoadedTables(connectionId: connection.id)
+
+        let tables = DatabaseTreeMetadataService.shared.tables(
+            connectionId: connection.id,
+            database: connection.database,
+            schema: "public"
+        )
+        #expect(tables.isEmpty)
     }
 }

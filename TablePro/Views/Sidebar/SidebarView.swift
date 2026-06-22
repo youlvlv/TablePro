@@ -86,7 +86,7 @@ struct SidebarView: View {
             pendingDeletes: pendingDeletes,
             tableOperationOptions: tableOperationOptions
         )
-        vm.searchText = windowState.searchText
+        vm.searchText = sidebarState.searchText
         if databaseType == .redis, let existingVM = sidebarState.redisKeyTreeViewModel {
             vm.redisKeyTreeViewModel = existingVM
         }
@@ -109,7 +109,7 @@ struct SidebarView: View {
                 if let coordinator {
                     FavoritesTabView(
                         connectionId: connectionId,
-                        windowState: coordinator.windowSidebarState,
+                        sharedSidebarState: sidebarState,
                         tables: tables,
                         coordinator: coordinator
                     )
@@ -118,7 +118,7 @@ struct SidebarView: View {
                 }
             }
         }
-        .onChange(of: windowState.searchText) { _, newValue in
+        .onChange(of: sidebarState.searchText) { _, newValue in
             viewModel.searchText = newValue
         }
         .onAppear {
@@ -275,7 +275,7 @@ struct SidebarView: View {
             loadingState
         case .failed(let message):
             errorState(message: message)
-        case .loaded where !viewModel.searchText.isEmpty && !hasAnyMatch:
+        case .loaded where !viewModel.filterQuery.isEmpty && !hasAnyMatch:
             noMatchState
         case .loaded(let allTables) where allTables.isEmpty && routines.isEmpty:
             emptyState
@@ -361,7 +361,7 @@ struct SidebarView: View {
             if viewModel.databaseType == .redis, let keyTreeVM = sidebarState.redisKeyTreeViewModel {
                 Section(isExpanded: $viewModel.isRedisKeysExpanded) {
                     RedisKeyTreeView(
-                        nodes: keyTreeVM.displayNodes(searchText: viewModel.searchText),
+                        nodes: keyTreeVM.displayNodes(searchText: viewModel.filterQuery),
                         isLoading: keyTreeVM.isLoading,
                         isTruncated: keyTreeVM.isTruncated,
                         onSelectNamespace: { prefix in

@@ -45,6 +45,7 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnost
 
     static let isDownloadable = true
     static let supportsTriggers = true
+    static let supportsTriggerEditing = true
     static let pathFieldRole: PathFieldRole = .serviceName
     static let supportsForeignKeyDisable = false
     static let supportsSchemaSwitching = true
@@ -159,6 +160,16 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin, PluginDiagnost
                     String(localized: "Upgrade the database to 11.2 or later, or connect with a client that bundles Oracle's OCI client such as SQL Developer or DataGrip.")
                 ],
                 supportURL: issuesURL
+            )
+        case .protocolError:
+            return PluginDiagnostic(
+                title: String(localized: "Connection Reset"),
+                message: oracleError.message,
+                suggestedActions: [
+                    String(localized: "Run the query again. TablePro reconnects to the server automatically."),
+                    String(localized: "If the same query keeps failing, the server may be returning data the driver cannot decode. File an issue with your Oracle version.")
+                ],
+                supportURL: URL(string: "https://github.com/TableProApp/TablePro/issues/483")
             )
         case .generic, .notConnected, .connectionFailed, .queryFailed:
             return nil
@@ -510,6 +521,25 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 enabled: enabled
             )
         }
+    }
+
+    var triggerEditUsesReplace: Bool { true }
+
+    func createTriggerTemplate(table: String, schema: String?) -> String? {
+        let quotedTable = "\"\(table.replacingOccurrences(of: "\"", with: "\"\""))\""
+        return """
+        CREATE OR REPLACE TRIGGER \("\"TRIGGER_NAME\"")
+        BEFORE INSERT ON \(quotedTable)
+        FOR EACH ROW
+        BEGIN
+            -- :NEW.column := ...;
+            NULL;
+        END;
+        """
+    }
+
+    func generateDropTriggerSQL(name: String, table: String, schema: String?) -> String? {
+        "DROP TRIGGER \"\(name.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
 
     func fetchAllColumns(schema: String?) async throws -> [String: [PluginColumnInfo]] {

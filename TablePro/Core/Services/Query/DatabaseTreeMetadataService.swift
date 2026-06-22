@@ -208,6 +208,37 @@ final class DatabaseTreeMetadataService {
         _ = await (tables, routines)
     }
 
+    func refreshLoadedTables(connectionId: UUID) async {
+        let keys = tablesState.keys.filter { $0.connectionId == connectionId }
+        await withTaskGroup(of: Void.self) { group in
+            for key in keys {
+                group.addTask { @MainActor in
+                    await self.reloadTablesInPlace(key)
+                }
+            }
+        }
+    }
+
+    private func reloadTablesInPlace(_ key: ObjectsKey) async {
+        guard isConnected(key.connectionId) else { return }
+        await tablesDedup.cancel(key: key)
+        do {
+            let list = try await tablesDedup.execute(key: key) { [self] in
+                try await withDriver(connectionId: key.connectionId, database: key.database) { driver in
+                    try await driver.fetchTables(schema: key.schema)
+                }
+            }
+            let next: MetadataLoadState<[TableInfo]> = .loaded(list)
+            guard tablesState[key] != next else { return }
+            tablesState[key] = next
+        } catch is CancellationError {
+        } catch {
+            Self.logger.warning(
+                "tables refresh failed db=\(key.database, privacy: .public) schema=\(key.schema ?? "nil", privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+            )
+        }
+    }
+
     // MARK: - Lifecycle
 
     func handleReconnect(connectionId: UUID) async {
@@ -292,7 +323,7 @@ final class DatabaseTreeMetadataService {
         return ObjectsKey(connectionId: connectionId, database: database, schema: normalized)
     }
 
-    static func connectionObjectKeys(
+    nonisolated static func connectionObjectKeys(
         tableKeys: some Sequence<ObjectsKey>,
         routineKeys: some Sequence<ObjectsKey>,
         connectionId: UUID

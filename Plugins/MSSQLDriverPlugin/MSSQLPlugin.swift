@@ -151,6 +151,7 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     static let supportsDropDatabase = true
     static let supportsTriggers = true
+    static let supportsTriggerEditing = true
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         MSSQLPluginDriver(config: config)
@@ -218,9 +219,7 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     init(config: DriverConnectionConfig) {
         self.config = config
-        self._currentSchema = config.additionalFields["mssqlSchema"]?.isEmpty == false
-            ? config.additionalFields["mssqlSchema"]!
-            : "dbo"
+        self._currentSchema = config.additionalFields["mssqlSchema"].flatMap { $0.isEmpty ? nil : $0 } ?? "dbo"
     }
 
     private var escapedSchema: String {
@@ -530,7 +529,6 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             query: query, parameters: parameters.map { $0.asText }
         )
 
-        // If no placeholders were found, execute the query as-is
         guard !paramDecls.isEmpty else {
             return try await execute(query: query)
         }

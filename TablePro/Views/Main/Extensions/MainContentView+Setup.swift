@@ -188,16 +188,13 @@ extension MainContentView {
             : activeDatabase.flatMap { $0.isEmpty ? nil : $0 }
 
         Task {
-            var contextChanged = false
             if let targetDatabase, targetDatabase != session.activeDatabase {
-                await coordinator.switchDatabase(to: targetDatabase)
-                contextChanged = true
+                await coordinator.switchDatabase(to: targetDatabase, clearTabs: false)
             }
             if let activeSchema, !activeSchema.isEmpty, activeSchema != session.currentSchema {
                 await coordinator.switchSchema(to: activeSchema)
-                contextChanged = true
             }
-            if isTableTab, !contextChanged {
+            if isTableTab {
                 coordinator.lazyLoadCurrentTabIfNeeded()
             }
         }
@@ -293,7 +290,6 @@ extension MainContentView {
         window.representedURL = tabManager.selectedTab?.content.sourceFileURL
         window.isDocumentEdited = tabManager.selectedTab?.content.isFileDirty ?? false
 
-        // Update command actions window reference now that it's available
         commandActions?.window = window
 
         // Publish command actions to the registry NOW. `windowDidBecomeKey`
