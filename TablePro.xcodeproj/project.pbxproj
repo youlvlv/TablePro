@@ -1415,6 +1415,7 @@
 				5A87D000200000000 /* Sources */,
 				5A87D000300000000 /* Frameworks */,
 				5A87D000400000000 /* Resources */,
+				5A87D000350000000 /* Remove Go Sources from Bundle */,
 			);
 			buildRules = (
 			);
@@ -2117,6 +2118,25 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A87D000350000000 /* Remove Go Sources from Bundle */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Remove Go Sources from Bundle";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Remove Go source files mistakenly copied as bundle resources by the\n# synchronized folder. They are build inputs, not runtime resources.\nRESOURCES_DIR=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nfind \"$RESOURCES_DIR\" -maxdepth 1 -type f -name \"*.go\" -delete\nrm -f \"$RESOURCES_DIR/go.mod\" \"$RESOURCES_DIR/go.sum\" \"$RESOURCES_DIR/CHANGELOG.md\" \"$RESOURCES_DIR/VERSION\"\n";
 		};
 		5A862000400000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -3193,6 +3213,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -3229,6 +3250,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
