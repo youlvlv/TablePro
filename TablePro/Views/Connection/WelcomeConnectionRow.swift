@@ -13,8 +13,12 @@ struct WelcomeConnectionRow: View {
     @State private var isHovering = false
     private let pluginManager = PluginManager.shared
 
-    private var displayTags: [ConnectionTag] {
-        TagStorage.shared.tags(for: connection.tagIds)
+    private var metadata: (tags: [ConnectionTag], group: ConnectionGroup?) {
+        ConnectionMetadata.resolve(
+            connection: connection,
+            tags: TagStorage.shared.loadTags(),
+            groups: GroupStorage.shared.loadGroups()
+        )
     }
 
     private var showsLocalOnly: Bool {
@@ -35,7 +39,8 @@ struct WelcomeConnectionRow: View {
     }
 
     var body: some View {
-        HStack {
+        let meta = metadata
+        return HStack {
             connection.type.iconImage
                 .renderingMode(.template)
                 .font(.title3)
@@ -47,17 +52,24 @@ struct WelcomeConnectionRow: View {
                     .font(.body)
                     .foregroundStyle(.primary)
 
-                Text(connection.connectionSubtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .help(connection.connectionSubtitle)
+                HStack(spacing: 6) {
+                    Text(connection.connectionSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(connection.connectionSubtitle)
+
+                    if let group = meta.group {
+                        ConnectionGroupBadge(group: group)
+                            .layoutPriority(1)
+                    }
+                }
             }
 
             Spacer(minLength: 8)
 
-            trailingAccessories
+            trailingAccessories(tags: meta.tags)
         }
         .contentShape(Rectangle())
         .onHover { hovering in isHovering = hovering }
@@ -68,7 +80,7 @@ struct WelcomeConnectionRow: View {
     }
 
     @ViewBuilder
-    private var trailingAccessories: some View {
+    private func trailingAccessories(tags: [ConnectionTag]) -> some View {
         HStack(spacing: 8) {
             if isDriverRejected {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -86,37 +98,9 @@ struct WelcomeConnectionRow: View {
                     .accessibilityLabel(String(localized: "Local only"))
             }
 
-            tagAccessory
+            ConnectionTagsBadge(tags: tags)
 
             favoriteButton
-        }
-    }
-
-    @ViewBuilder
-    private var tagAccessory: some View {
-        let tags = displayTags
-        if !tags.isEmpty {
-            let shown = Array(tags.prefix(3))
-            HStack(spacing: 4) {
-                ForEach(shown) { tag in
-                    Circle()
-                        .fill(tag.color.color)
-                        .frame(width: 8, height: 8)
-                }
-                if tags.count == 1 {
-                    Text(tags[0].name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else if tags.count > shown.count {
-                    Text("+\(tags.count - shown.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .help(tags.map(\.name).joined(separator: ", "))
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(String(format: String(localized: "Tags: %@"), tags.map(\.name).joined(separator: ", ")))
         }
     }
 
