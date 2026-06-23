@@ -780,6 +780,24 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         deletedRowIndices: Set<Int>,
         insertedRowIndices: Set<Int>
     ) -> [(statement: String, parameters: [PluginCellValue])]? {
+        generateStatements(
+            table: table, schema: nil, columns: columns, primaryKeyColumns: primaryKeyColumns,
+            changes: changes, insertedRowData: insertedRowData,
+            deletedRowIndices: deletedRowIndices, insertedRowIndices: insertedRowIndices
+        )
+    }
+
+    func generateStatements(
+        table: String,
+        schema: String?,
+        columns: [String],
+        primaryKeyColumns: [String],
+        changes: [PluginRowChange],
+        insertedRowData: [Int: [PluginCellValue]],
+        deletedRowIndices: Set<Int>,
+        insertedRowIndices: Set<Int>
+    ) -> [(statement: String, parameters: [PluginCellValue])]? {
+        let qualifiedTable = oracleQualifiedName(schema: schema, table: table)
         var statements: [(statement: String, parameters: [PluginCellValue])] = []
 
         for change in changes {
@@ -787,17 +805,17 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             case .insert:
                 guard insertedRowIndices.contains(change.rowIndex) else { continue }
                 if let values = insertedRowData[change.rowIndex] {
-                    if let stmt = generateOracleInsert(table: table, columns: columns, values: values) {
+                    if let stmt = generateOracleInsert(qualifiedTable: qualifiedTable, columns: columns, values: values) {
                         statements.append(stmt)
                     }
                 }
             case .update:
-                if let stmt = generateOracleUpdate(table: table, columns: columns, change: change) {
+                if let stmt = generateOracleUpdate(qualifiedTable: qualifiedTable, columns: columns, change: change) {
                     statements.append(stmt)
                 }
             case .delete:
                 guard deletedRowIndices.contains(change.rowIndex) else { continue }
-                if let stmt = generateOracleDelete(table: table, columns: columns, change: change) {
+                if let stmt = generateOracleDelete(qualifiedTable: qualifiedTable, columns: columns, change: change) {
                     statements.append(stmt)
                 }
             }
@@ -811,7 +829,7 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     private func generateOracleInsert(
-        table: String,
+        qualifiedTable: String,
         columns: [String],
         values: [PluginCellValue]
     ) -> (statement: String, parameters: [PluginCellValue])? {
@@ -834,18 +852,17 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
         let columnList = insertColumns.joined(separator: ", ")
         let valueList = valuesSQL.joined(separator: ", ")
-        let sql = "INSERT INTO \(escapeOracleIdentifier(table)) (\(columnList)) VALUES (\(valueList))"
+        let sql = "INSERT INTO \(qualifiedTable) (\(columnList)) VALUES (\(valueList))"
         return (statement: sql, parameters: parameters)
     }
 
     private func generateOracleUpdate(
-        table: String,
+        qualifiedTable: String,
         columns: [String],
         change: PluginRowChange
     ) -> (statement: String, parameters: [PluginCellValue])? {
         guard !change.cellChanges.isEmpty, let originalRow = change.originalRow else { return nil }
 
-        let escapedTable = escapeOracleIdentifier(table)
         var parameters: [PluginCellValue] = []
 
         let setClauses = change.cellChanges.map { cellChange -> String in
@@ -870,18 +887,17 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-        let sql = "UPDATE \(escapedTable) SET \(setClauses) WHERE \(whereClause) AND ROWNUM = 1"
+        let sql = "UPDATE \(qualifiedTable) SET \(setClauses) WHERE \(whereClause) AND ROWNUM = 1"
         return (statement: sql, parameters: parameters)
     }
 
     private func generateOracleDelete(
-        table: String,
+        qualifiedTable: String,
         columns: [String],
         change: PluginRowChange
     ) -> (statement: String, parameters: [PluginCellValue])? {
         guard let originalRow = change.originalRow else { return nil }
 
-        let escapedTable = escapeOracleIdentifier(table)
         var parameters: [PluginCellValue] = []
         var conditions: [String] = []
 
@@ -900,7 +916,7 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-        let sql = "DELETE FROM \(escapedTable) WHERE \(whereClause) AND ROWNUM = 1"
+        let sql = "DELETE FROM \(qualifiedTable) WHERE \(whereClause) AND ROWNUM = 1"
         return (statement: sql, parameters: parameters)
     }
 
@@ -1111,8 +1127,21 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         limit: Int,
         offset: Int
     ) -> String? {
-        let quotedTable = oracleQuoteIdentifier(table)
-        var query = "SELECT * FROM \(quotedTable)"
+        buildBrowseQuery(
+            table: table, schema: nil, sortColumns: sortColumns,
+            columns: columns, limit: limit, offset: offset
+        )
+    }
+
+    func buildBrowseQuery(
+        table: String,
+        schema: String?,
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        var query = "SELECT * FROM \(oracleQualifiedName(schema: schema, table: table))"
         let orderBy = PluginSQLFilter.buildOrderByClause(
             sortColumns: sortColumns, columns: columns, quoteIdentifier: oracleQuoteIdentifier
         ) ?? "ORDER BY 1"
@@ -1129,8 +1158,23 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         limit: Int,
         offset: Int
     ) -> String? {
-        let quotedTable = oracleQuoteIdentifier(table)
-        var query = "SELECT * FROM \(quotedTable)"
+        buildFilteredQuery(
+            table: table, schema: nil, filters: filters, logicMode: logicMode,
+            sortColumns: sortColumns, columns: columns, limit: limit, offset: offset
+        )
+    }
+
+    func buildFilteredQuery(
+        table: String,
+        schema: String?,
+        filters: [(column: String, op: String, value: String)],
+        logicMode: String,
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        var query = "SELECT * FROM \(oracleQualifiedName(schema: schema, table: table))"
         let whereClause = PluginSQLFilter.buildWhereClause(
             filters: filters,
             logicMode: logicMode,
@@ -1151,6 +1195,13 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     // MARK: - Query Building Helpers
+
+    private func oracleQualifiedName(schema: String?, table: String) -> String {
+        guard let schema, !schema.isEmpty else {
+            return oracleQuoteIdentifier(table)
+        }
+        return "\(oracleQuoteIdentifier(schema)).\(oracleQuoteIdentifier(table))"
+    }
 
     private func oracleQuoteIdentifier(_ identifier: String) -> String {
         "\"\(identifier.replacingOccurrences(of: "\"", with: "\"\""))\""
