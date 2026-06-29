@@ -46,6 +46,7 @@ extension DatabaseType {
     static let libsql = DatabaseType(rawValue: "libSQL")
     static let turso = DatabaseType(rawValue: "Turso")
     static let elasticsearch = DatabaseType(rawValue: "Elasticsearch")
+    static let dameng = DatabaseType(rawValue: "Dameng")
 }
 
 extension DatabaseType: Codable {
@@ -185,6 +186,7 @@ extension DatabaseType {
         case "libSQL", "Turso": Color(hex: "4FF8D2")
         case "DynamoDB": Color(hex: "4053D6")
         case "BigQuery": Color(hex: "4285F4")
+        case "Dameng": Color(hex: "E60012")
         default: Color.accentColor
         }
     }

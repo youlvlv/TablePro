@@ -1,0 +1,4 @@
+module CDamengGo [system] {
+    header "CDamengGo.h"
+    export *
+}

@@ -21,13 +21,14 @@ TEAM_ID="${TEAM_ID:-}"
 NOTARIZE="${NOTARIZE:-false}"
 APPLE_ID="${APPLE_ID:-}"
 
-if [ -z "$TEAM_ID" ]; then
-    echo "ERROR: TEAM_ID is not set. Pass via env or set in your shell profile." >&2
-    echo "       Example: TEAM_ID=ABCDEFGHIJ ./scripts/build-plugin.sh $PLUGIN_TARGET" >&2
-    exit 1
-fi
-
-if [ -z "$SIGN_IDENTITY" ]; then
+if [ "$SIGN_IDENTITY" = "-" ]; then
+    echo "Using ad-hoc code signing (test only)" >&2
+elif [ -z "$SIGN_IDENTITY" ]; then
+    if [ -z "$TEAM_ID" ]; then
+        echo "ERROR: TEAM_ID is not set. Pass via env or set in your shell profile." >&2
+        echo "       Example: TEAM_ID=ABCDEFGHIJ ./scripts/build-plugin.sh $PLUGIN_TARGET" >&2
+        exit 1
+    fi
     # Try the canonical "Developer ID Application: <Name> (<TEAMID>)" pattern.
     # If your keychain stores the identity differently, set SIGN_IDENTITY explicitly.
     SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null \
