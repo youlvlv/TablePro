@@ -58,6 +58,8 @@ struct MainEditorContentView: View {
     @State private var serverDashboardViewModels: [UUID: ServerDashboardViewModel] = [:]
     @State private var dataTabDelegate = DataTabGridDelegate()
 
+    @Bindable private var treeService = DatabaseTreeMetadataService.shared
+
     // Native macOS window tabs — no LRU tracking needed (single tab per window)
 
     // MARK: - Environment
@@ -261,11 +263,57 @@ struct MainEditorContentView: View {
         .id(tab.id)
     }
 
+    // MARK: - Per-tab container picker
+
+    private var containerSwitchTarget: ContainerSwitchTarget? {
+        PluginManager.shared.containerSwitchTarget(for: connection.type)
+    }
+
+    private func containerDatabases(for tab: QueryTab) -> [DatabaseMetadata] {
+        guard containerSwitchTarget == .database else { return [] }
+        let all = treeService.databases(for: connectionId)
+        let selected = SharedSidebarState.forConnection(connectionId).databaseFilterSelected
+        var visible = DatabaseTreeVisibility.visible(databases: all, selected: selected)
+        let bound = containerName(for: tab)
+        if !bound.isEmpty, !visible.contains(where: { $0.name == bound }),
+           let boundDatabase = all.first(where: { $0.name == bound }) {
+            visible.insert(boundDatabase, at: 0)
+        }
+        return visible
+    }
+
+    private var isContainerSwitchReadOnly: Bool {
+        guard containerSwitchTarget == .database else { return false }
+        return PluginManager.shared.requiresReconnectForDatabaseSwitch(for: connection.type)
+    }
+
+    private var containerEntityName: String {
+        PluginManager.shared.containerEntityName(for: connection.type)
+    }
+
+    private func containerName(for tab: QueryTab) -> String {
+        let bound = tab.tableContext.databaseName
+        return bound.isEmpty ? coordinator.activeDatabaseName : bound
+    }
+
+    private func changeContainer(for tab: QueryTab, to name: String) {
+        let tabId = tab.id
+        let previousBinding = tab.tableContext.databaseName
+        tabManager.mutate(tabId: tabId) { $0.tableContext.databaseName = name }
+        Task {
+            let switched = await coordinator.switchDatabase(to: name, persist: false)
+            if !switched {
+                tabManager.mutate(tabId: tabId) { $0.tableContext.databaseName = previousBinding }
+            }
+        }
+    }
+
     // MARK: - Query Tab Content
 
     @ViewBuilder
     private func queryTabContent(tab: QueryTab) -> some View {
         @Bindable var bindableCoordinator = coordinator
+        let claimFocus = coordinator.tabManager.pendingFocusTabId == tab.id
         QuerySplitView(
             isBottomCollapsed: tab.display.isResultsCollapsed,
             autosaveName: "QuerySplit-\(connectionId)-\(tab.id)",
@@ -291,6 +339,7 @@ struct MainEditorContentView: View {
                         connectionId: coordinator.connection.id,
                         connectionAIPolicy: coordinator.connection.aiPolicy ?? AppSettingsManager.shared.ai.defaultConnectionPolicy,
                         tabID: tab.id,
+                        claimFocusOnAppear: claimFocus,
                         onCloseTab: {
                             NSApp.keyWindow?.close()
                         },
@@ -317,7 +366,12 @@ struct MainEditorContentView: View {
                             guard !text.isEmpty else { return }
                             coordinator.favoriteDialogQuery = FavoriteDialogQuery(query: text)
                         },
-                        onClearResults: { coordinator.clearActiveQueryResults() }
+                        onClearResults: { coordinator.clearActiveQueryResults() },
+                        availableContainers: containerDatabases(for: tab),
+                        selectedContainerName: containerName(for: tab),
+                        containerEntityName: containerEntityName,
+                        isContainerSwitchReadOnly: isContainerSwitchReadOnly,
+                        onContainerChanged: { name in changeContainer(for: tab, to: name) }
                     )
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -327,7 +381,12 @@ struct MainEditorContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         )
-        .onAppear { coordinator.applyRestoredCursor(for: tab.id) }
+        .onAppear {
+            coordinator.applyRestoredCursor(for: tab.id)
+            if coordinator.tabManager.pendingFocusTabId == tab.id {
+                coordinator.tabManager.pendingFocusTabId = nil
+            }
+        }
     }
 
     private func reloadFileForTab(tabId: UUID, url: URL) {

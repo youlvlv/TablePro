@@ -7,9 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Per-tab database picker in the query editor toolbar. Each SQL tab can target its own database without clearing other tabs.
+- Single-clicking a table in the sidebar tree opens it in the current tab; double-clicking opens it in a new tab.
+
+### Changed
+
+- Switching the active database keeps existing tabs open instead of closing them.
+- The toolbar, quick switcher, and query editor database pickers follow the sidebar database filter.
+- Switching table tabs is faster: filter settings persist off the main thread, and only the active database's table list refreshes.
+
 ### Fixed
 
-- Connecting to Oracle no longer crashes the app while reading certain server values during the handshake; a bad packet now fails the connection with an error instead. (#1746)
+- Switching between sidebar tables no longer leaves extra blank space above the list. (#1675)
+- SSH tunnels no longer pin a CPU core after the connection drops. A dropped tunnel is now detected and torn down instead of spinning in its relay loop. (#1769)
+
+## [0.53.0] - 2026-06-25
+
+### Added
+
+- Connections can have multiple tags. Assign them in the connection form and filter the welcome list by tag with Match Any or Match All. (#744)
+- Per-column value filter in the data grid. Click the funnel icon on a column header to choose which loaded values to show, across several columns at once. Filters loaded rows without re-querying. (#1454)
+- Elasticsearch support: connect to 7.x and 8.x, browse indices, run Query DSL in a console, and edit documents in the data grid. Install from Settings > Plugins. (#1529)
+- The connection switcher and welcome list now show each connection's tags and group. (#1323)
+- The ER diagram marks relationship cardinality (one-to-one, one-to-many, and optional variants) with crow's foot notation, read from primary keys and unique indexes. Junction tables collapse into a single many-to-many link, with a toolbar toggle to expand them. (#1335)
+- Export the ER diagram to SQL. A toolbar button opens a query tab with CREATE TABLE and foreign key statements for the current schema. (#1335)
+- Oracle connections have a Native network encryption option, off by default, for servers that require encrypted traffic. (#1746)
+
+### Changed
+
+- The ER diagram uses a more compact layout, keeps foreign-key-linked tables together, and tints each connected group with its own header color. (#1755)
+- When an Oracle server drops the connection during login, the error dialog now shows which handshake phase it stopped at (helps diagnose Oracle 11g). (#1746)
+
+### Fixed
+
+- Opening a new query tab now puts keyboard focus in the SQL editor instead of the sidebar filter, so you can type right away. (#1765)
+- Raw filters in the data grid now work on document and key-value databases; the typed text was dropped before reaching the driver. (#1529)
+- Connecting to Oracle no longer crashes on certain server values during the handshake; a bad packet now fails the connection with an error. (#1746)
+- Connecting to Oracle no longer hangs when the server permits but does not require native network encryption; TablePro now connects in clear text by default, like Oracle's own clients. (#1746)
+- Following a foreign key into another schema now opens the correct table on SQL Server and Oracle, instead of falling back to the default schema. (#1754)
+- Browsing or editing a SQL Server or Oracle table outside the default schema no longer fails with "Invalid object name" or writes to the wrong table; queries now qualify the table with its schema. (#1754)
 
 ## [0.52.1] - 2026-06-22
 
@@ -2354,7 +2392,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.52.1...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.53.0...HEAD
+[0.53.0]: https://github.com/TableProApp/TablePro/compare/v0.52.1...v0.53.0
 [0.52.1]: https://github.com/TableProApp/TablePro/compare/v0.52.0...v0.52.1
 [0.52.0]: https://github.com/TableProApp/TablePro/compare/v0.51.1...v0.52.0
 [0.51.1]: https://github.com/TableProApp/TablePro/compare/v0.51.0...v0.51.1

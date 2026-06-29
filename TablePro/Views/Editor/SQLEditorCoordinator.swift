@@ -45,9 +45,16 @@ final class SQLEditorCoordinator: TextViewCoordinator, TextViewDelegate {
     @ObservationIgnored private var isUppercasing = false
     @ObservationIgnored private var wasEditorFocused = false
     @ObservationIgnored private var didDestroy = false
+    @ObservationIgnored private var focusClaimPending = false
 
     /// Test-only accessor for destroy state
     var isDestroyed: Bool { didDestroy }
+
+    var pendingFocusClaim: Bool { focusClaimPending }
+
+    func scheduleEditorFocusClaim() {
+        focusClaimPending = true
+    }
 
     /// Vim mode for UI observation
     private(set) var vimMode: VimMode = .normal
@@ -110,12 +117,19 @@ final class SQLEditorCoordinator: TextViewCoordinator, TextViewDelegate {
             if let textView = controller.textView {
                 EditorEventRouter.shared.register(self, textView: textView)
 
-                // Auto-focus: make the editor first responder, then ensure a
-                // cursor exists. Order matters — setCursorPositions calls
-                // updateSelectionViews which guards on isFirstResponder.
-                if !self.isDestroyed, let window = textView.window,
-                   window.firstResponder == nil || window.firstResponder === window {
-                    window.makeFirstResponder(textView)
+                if !self.isDestroyed, let window = textView.window {
+                    let claimPending = self.focusClaimPending
+                    let responderName = window.firstResponder.map { String(describing: type(of: $0)) } ?? "nil"
+                    var made = false
+                    if claimPending {
+                        self.focusClaimPending = false
+                        made = window.makeFirstResponder(textView)
+                    } else if window.firstResponder == nil || window.firstResponder === window {
+                        made = window.makeFirstResponder(textView)
+                    }
+                    Self.logger.debug("Editor focus claim: pending=\(claimPending) isKey=\(window.isKeyWindow) responderBefore=\(responderName, privacy: .public) made=\(made)")
+                } else {
+                    Self.logger.debug("Editor focus claim skipped: hasWindow=\(textView.window != nil) destroyed=\(self.isDestroyed) pending=\(self.focusClaimPending)")
                 }
                 if controller.cursorPositions.isEmpty {
                     controller.setCursorPositions([CursorPosition(range: NSRange(location: 0, length: 0))])
@@ -176,6 +190,7 @@ final class SQLEditorCoordinator: TextViewCoordinator, TextViewDelegate {
 
     func destroy() {
         didDestroy = true
+        focusClaimPending = false
 
         uninstallVimKeyInterceptor()
 

@@ -85,6 +85,15 @@
 		5AEA8B472F6808CA0040461A /* EtcdHttpClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AEA8B3C2F6808CA0040461A /* EtcdHttpClient.swift */; };
 		5AEA8B492F6808E90040461A /* TableProPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A860000100000000 /* TableProPluginKit.framework */; };
 		5AEE5B362F5C9B7B00FA84D7 /* OracleNIO in Frameworks */ = {isa = PBXBuildFile; productRef = 5ACE00012F4F00000000000F /* OracleNIO */; };
+		5E1A500100000000000000A1 /* ElasticsearchConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A1 /* ElasticsearchConnection.swift */; };
+		5E1A500100000000000000A2 /* ElasticsearchConsoleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A2 /* ElasticsearchConsoleParser.swift */; };
+		5E1A500100000000000000A3 /* ElasticsearchMappingFlattener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A3 /* ElasticsearchMappingFlattener.swift */; };
+		5E1A500100000000000000A4 /* ElasticsearchPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A4 /* ElasticsearchPlugin.swift */; };
+		5E1A500100000000000000A5 /* ElasticsearchPluginDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A5 /* ElasticsearchPluginDriver.swift */; };
+		5E1A500100000000000000A6 /* ElasticsearchPluginDriver+Execution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A6 /* ElasticsearchPluginDriver+Execution.swift */; };
+		5E1A500100000000000000A7 /* ElasticsearchQueryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A7 /* ElasticsearchQueryBuilder.swift */; };
+		5E1A500100000000000000A8 /* ElasticsearchStatementGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A500200000000000000A8 /* ElasticsearchStatementGenerator.swift */; };
+		5E1A500100000000000000A9 /* TableProPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A860000100000000 /* TableProPluginKit.framework */; };
 		690F1972044539AA3EC01FAD /* SnowflakePluginDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CAC14AE00C256911D2A9D2E /* SnowflakePluginDriver.swift */; };
 		69F80E23278BD01CA254E291 /* SnowflakeError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE1C881DFE85C2D2DBCC5B87 /* SnowflakeError.swift */; };
 		703C8C18A7F43E262695F557 /* SnowflakePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CFCC6EA4288F34EBED5F37 /* SnowflakePlugin.swift */; };
@@ -267,6 +276,13 @@
 			remoteGlobalIDString = 5A1091C62EF17EDC0055EA7C;
 			remoteInfo = TablePro;
 		};
+		5E1A500000000000000000C0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5A1091BF2EF17EDC0055EA7C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E1A500600000000000000B0;
+			remoteInfo = ElasticsearchDriverPlugin;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -390,6 +406,15 @@
 		5AF00A102FB9000000000001 /* TableProUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TableProUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5ASECRETS000000000000001 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = SOURCE_ROOT; };
 		5E0809C2747F432C1F1C5A60 /* SnowflakeBrowserAuthServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnowflakeBrowserAuthServer.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A1 /* ElasticsearchConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchConnection.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A2 /* ElasticsearchConsoleParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchConsoleParser.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A3 /* ElasticsearchMappingFlattener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchMappingFlattener.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A4 /* ElasticsearchPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchPlugin.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A5 /* ElasticsearchPluginDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchPluginDriver.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A6 /* ElasticsearchPluginDriver+Execution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ElasticsearchPluginDriver+Execution.swift"; sourceTree = "<group>"; };
+		5E1A500200000000000000A7 /* ElasticsearchQueryBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchQueryBuilder.swift; sourceTree = "<group>"; };
+		5E1A500200000000000000A8 /* ElasticsearchStatementGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElasticsearchStatementGenerator.swift; sourceTree = "<group>"; };
+		5E1A500300000000000000A0 /* ElasticsearchDriverPlugin.tableplugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = ElasticsearchDriverPlugin.tableplugin; path = /Users/ngoquocdat/Workspaces/TablePro/build/Debug/ElasticsearchDriverPlugin.tableplugin; sourceTree = "<absolute>"; };
 		73CFCC6EA4288F34EBED5F37 /* SnowflakePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnowflakePlugin.swift; sourceTree = "<group>"; };
 		7D67B38E07DF4F42A9C86639 /* SnowflakeIdTokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnowflakeIdTokenStore.swift; sourceTree = "<group>"; };
 		84A5EE73D62C4576A9B9DFF2 /* SnowflakeStatementGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnowflakeStatementGenerator.swift; sourceTree = "<group>"; };
@@ -1085,6 +1110,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5E1A500400000000000000B2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E1A500100000000000000A9 /* TableProPluginKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C49F7C0CBE979B96ACFB9ABC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1108,6 +1141,7 @@
 			isa = PBXGroup;
 			children = (
 				5ADDB00500000000000000B0 /* Plugins/DynamoDBDriverPlugin */,
+				5E1A500500000000000000B0 /* Plugins/ElasticsearchDriverPlugin */,
 				5ABQR00500000000000000B0 /* Plugins/BigQueryDriverPlugin */,
 				5AEA8B412F6808CA0040461A /* Plugins/EtcdDriverPlugin */,
 				5AE4F4812F6BC0640097AC5B /* Plugins/CloudflareD1DriverPlugin */,
@@ -1230,6 +1264,21 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		5E1A500500000000000000B0 /* Plugins/ElasticsearchDriverPlugin */ = {
+			isa = PBXGroup;
+			children = (
+				5E1A500200000000000000A1 /* ElasticsearchConnection.swift */,
+				5E1A500200000000000000A2 /* ElasticsearchConsoleParser.swift */,
+				5E1A500200000000000000A3 /* ElasticsearchMappingFlattener.swift */,
+				5E1A500200000000000000A4 /* ElasticsearchPlugin.swift */,
+				5E1A500200000000000000A5 /* ElasticsearchPluginDriver.swift */,
+				5E1A500200000000000000A6 /* ElasticsearchPluginDriver+Execution.swift */,
+				5E1A500200000000000000A7 /* ElasticsearchQueryBuilder.swift */,
+				5E1A500200000000000000A8 /* ElasticsearchStatementGenerator.swift */,
+			);
+			path = Plugins/ElasticsearchDriverPlugin;
+			sourceTree = "<group>";
+		};
 		8FE5E1F9D0550A0E0AACD3EB /* SnowflakeDriverPlugin */ = {
 			isa = PBXGroup;
 			children = (
@@ -1303,6 +1352,7 @@
 				5A86F003C00000000 /* PBXTargetDependency */,
 				5ABBED7F2FB55E1400A78382 /* PBXTargetDependency */,
 				5ADDB00000000000000000C1 /* PBXTargetDependency */,
+				5E1A500000000000000000C1 /* PBXTargetDependency */,
 				5ABQR00000000000000000C1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -1918,6 +1968,25 @@
 			productReference = 5AF00A102FB9000000000001 /* TableProUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		5E1A500600000000000000B0 /* ElasticsearchDriverPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E1A500800000000000000B0 /* Build configuration list for PBXNativeTarget "ElasticsearchDriverPlugin" */;
+			buildPhases = (
+				5E1A500400000000000000B1 /* Sources */,
+				5E1A500400000000000000B2 /* Frameworks */,
+				5E1A500400000000000000B3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ElasticsearchDriverPlugin;
+			packageProductDependencies = (
+			);
+			productName = ElasticsearchDriverPlugin;
+			productReference = 5E1A500300000000000000A0 /* ElasticsearchDriverPlugin.tableplugin */;
+			productType = "com.apple.product-type.bundle";
+		};
 		FABFFD08BCD1EEE7219EAE75 /* SnowflakeDriverPlugin */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2919EAF57187D4EFE7E47F98 /* Build configuration list for PBXNativeTarget "SnowflakeDriverPlugin" */;
@@ -2069,6 +2138,7 @@
 				5AEA8B292F6808270040461A /* EtcdDriverPlugin */,
 				5AE4F4732F6BC0640097AC5B /* CloudflareD1DriverPlugin */,
 				5ADDB00600000000000000B0 /* DynamoDBDriverPlugin */,
+				5E1A500600000000000000B0 /* ElasticsearchDriverPlugin */,
 				5ABQR00600000000000000B0 /* BigQueryDriverPlugin */,
 				5A3BE6F72F97DA8100611C1F /* LibSQLDriverPlugin */,
 				5A32BBFF2F9D5F1300BAEB5F /* mcp-server */,
@@ -2302,6 +2372,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		5AF00A162FB9000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E1A500400000000000000B3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -2566,6 +2643,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5E1A500400000000000000B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E1A500100000000000000A1 /* ElasticsearchConnection.swift in Sources */,
+				5E1A500100000000000000A2 /* ElasticsearchConsoleParser.swift in Sources */,
+				5E1A500100000000000000A3 /* ElasticsearchMappingFlattener.swift in Sources */,
+				5E1A500100000000000000A4 /* ElasticsearchPlugin.swift in Sources */,
+				5E1A500100000000000000A5 /* ElasticsearchPluginDriver.swift in Sources */,
+				5E1A500100000000000000A6 /* ElasticsearchPluginDriver+Execution.swift in Sources */,
+				5E1A500100000000000000A7 /* ElasticsearchQueryBuilder.swift in Sources */,
+				5E1A500100000000000000A8 /* ElasticsearchStatementGenerator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2693,6 +2785,11 @@
 			isa = PBXTargetDependency;
 			target = 5A1091C62EF17EDC0055EA7C /* TablePro */;
 			targetProxy = 5AF00A112FB9000000000001 /* PBXContainerItemProxy */;
+		};
+		5E1A500000000000000000C1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E1A500600000000000000B0 /* ElasticsearchDriverPlugin */;
+			targetProxy = 5E1A500000000000000000C0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2882,7 +2979,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 102;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
 				ENABLE_APP_SANDBOX = NO;
@@ -2914,7 +3011,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Libs/dylibs";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.52.1;
+				MARKETING_VERSION = 0.53.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-w",
 					"-force_load",
@@ -2959,7 +3056,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 102;
 				DEAD_CODE_STRIPPING = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
@@ -2992,7 +3089,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Libs/dylibs";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.52.1;
+				MARKETING_VERSION = 0.53.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-w",
 					"-force_load",
@@ -4639,6 +4736,55 @@
 			};
 			name = Release;
 		};
+		5E1A500700000000000000B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Plugins/ElasticsearchDriverPlugin/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = "$(PRODUCT_MODULE_NAME).ElasticsearchPlugin";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro.ElasticsearchDriverPlugin;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				WRAPPER_EXTENSION = tableplugin;
+			};
+			name = Debug;
+		};
+		5E1A500700000000000000B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Plugins/ElasticsearchDriverPlugin/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = "$(PRODUCT_MODULE_NAME).ElasticsearchPlugin";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro.ElasticsearchDriverPlugin;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				WRAPPER_EXTENSION = tableplugin;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -4930,6 +5076,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		5E1A500800000000000000B0 /* Build configuration list for PBXNativeTarget "ElasticsearchDriverPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E1A500700000000000000B1 /* Debug */,
+				5E1A500700000000000000B2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -4969,7 +5124,7 @@
 			repositoryURL = "https://github.com/TableProApp/oracle-nio";
 			requirement = {
 				kind = revision;
-				revision = f58c1aa2fe0c308aa99edfd18081ae9a98e3d3ed;
+				revision = 1140759e3bc339a8383b5d38f45fcb4ef61e602a;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

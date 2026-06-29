@@ -4,9 +4,25 @@
 //
 
 import Foundation
+import os
 import TableProPluginKit
 
 extension MainContentCoordinator {
+    func switchDatabaseBeforeExecution(to database: String, connectionId: UUID) async {
+        do {
+            try await DatabaseManager.shared.switchDatabase(to: database, for: connectionId, persist: false)
+            await MainActor.run { toolbarState.currentDatabase = database }
+            Task { [weak self] in
+                await SchemaService.shared.invalidate(connectionId: connectionId)
+                await self?.refreshTables(currentDatabaseOnly: true)
+            }
+        } catch {
+            Self.logger.warning(
+                "Pre-execute switch to \(database, privacy: .public) failed: \(error.localizedDescription, privacy: .public)"
+            )
+        }
+    }
+
     func resolveRowCap(sql: String, tabType: TabType) -> Int? {
         queryExecutionCoordinator.resolveRowCap(sql: sql, tabType: tabType)
     }

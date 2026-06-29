@@ -133,7 +133,8 @@ enum SessionStateFactory {
                             initialQuery: payload.initialQuery,
                             title: payload.tabTitle,
                             databaseName: payload.databaseName ?? activeDatabaseName,
-                            sourceFileURL: payload.sourceFileURL
+                            sourceFileURL: payload.sourceFileURL,
+                            claimFocus: true
                         )
                     }
                 case .createTable:
@@ -154,7 +155,8 @@ enum SessionStateFactory {
                 tabMgr.addTab(
                     initialQuery: payload.initialQuery,
                     title: title,
-                    databaseName: payload.databaseName ?? activeDatabaseName
+                    databaseName: payload.databaseName ?? activeDatabaseName,
+                    claimFocus: true
                 )
             case .restoreOrDefault:
                 break

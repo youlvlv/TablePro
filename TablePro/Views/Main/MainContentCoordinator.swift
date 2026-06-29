@@ -582,21 +582,21 @@ final class MainContentCoordinator {
         _teardownScheduled.withLock { $0 = false }
     }
 
-    func refreshTables() async {
+    func refreshTables(currentDatabaseOnly: Bool = false) async {
         if let existing = schemaReloadTask {
             await existing.value
             return
         }
         let task = Task { [weak self] in
             guard let self else { return }
-            await self.reloadSchema()
+            await self.reloadSchema(currentDatabaseOnly: currentDatabaseOnly)
         }
         schemaReloadTask = task
         await task.value
         schemaReloadTask = nil
     }
 
-    private func reloadSchema() async {
+    private func reloadSchema(currentDatabaseOnly: Bool = false) async {
         schemaColumns.removeAll()
         let schemaService = services.schemaService
         let connectionId = connectionId
@@ -615,7 +615,8 @@ final class MainContentCoordinator {
         } catch {
             Self.logger.warning("Schema refresh failed: \(error.localizedDescription, privacy: .public)")
         }
-        await DatabaseTreeMetadataService.shared.refreshLoadedTables(connectionId: connectionId)
+        let database = currentDatabaseOnly ? activeDatabaseName : nil
+        await DatabaseTreeMetadataService.shared.refreshLoadedTables(connectionId: connectionId, database: database)
         await reconcilePostSchemaLoad()
     }
 
@@ -1166,6 +1167,12 @@ final class MainContentCoordinator {
             )
         }
         let connId = connectionId
+        let currentDatabase = activeDatabaseName
+        let targetDatabase = tab.tableContext.databaseName.isEmpty
+            ? currentDatabase
+            : tab.tableContext.databaseName
+        let perTabSwitchAllowed = !services.pluginManager.requiresReconnectForDatabaseSwitch(for: connection.type)
+        let needsDatabaseSwitch = perTabSwitchAllowed && !targetDatabase.isEmpty && targetDatabase != currentDatabase
 
         currentQueryTask = Task { [weak self] in
             guard let self else { return }
@@ -1183,6 +1190,10 @@ final class MainContentCoordinator {
                     }
                     return
                 }
+            }
+
+            if needsDatabaseSwitch {
+                await switchDatabaseBeforeExecution(to: targetDatabase, connectionId: connId)
             }
 
             let schemaTask: Task<FetchedTableSchema, Error>?

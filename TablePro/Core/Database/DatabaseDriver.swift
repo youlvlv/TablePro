@@ -340,6 +340,20 @@ extension DatabaseDriver {
         return all.filter { nameSet.contains($0.key) }
     }
 
+    func fetchIndexes(forTables tableNames: [String]) async throws -> [String: [IndexInfo]] {
+        var result: [String: [IndexInfo]] = [:]
+        for tableName in tableNames {
+            do {
+                let indexes = try await fetchIndexes(table: tableName)
+                if !indexes.isEmpty { result[tableName] = indexes }
+            } catch {
+                Logger(subsystem: "com.TablePro", category: "DatabaseDriver")
+                    .debug("Failed to fetch indexes for \(tableName): \(error.localizedDescription)")
+            }
+        }
+        return result
+    }
+
     /// Default fetchAllColumns: falls back to per-table fetchColumns (N+1).
     /// Drivers should override with a single bulk query where possible.
     func fetchAllColumns() async throws -> [String: [ColumnInfo]] {

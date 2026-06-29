@@ -27,7 +27,7 @@ struct OracleError: Error {
         case protocolError
         case authVerifierUnsupported(flag: String)
         case authVersionNotSupported
-        case authConnectionDropped
+        case authConnectionDropped(phase: String?)
     }
 
     let message: String
@@ -120,6 +120,7 @@ final class OracleConnectionWrapper: @unchecked Sendable {
     private let serviceName: String
     private let useSID: Bool
     private let sslConfig: SSLConfiguration
+    private let nativeNetworkEncryption: Bool
 
     private struct LockedState: Sendable {
         var isConnected = false
@@ -143,7 +144,8 @@ final class OracleConnectionWrapper: @unchecked Sendable {
         database: String,
         serviceName: String = "",
         useSID: Bool = false,
-        sslConfig: SSLConfiguration = SSLConfiguration()
+        sslConfig: SSLConfiguration = SSLConfiguration(),
+        nativeNetworkEncryption: Bool = false
     ) {
         self.host = host
         self.port = port
@@ -153,6 +155,7 @@ final class OracleConnectionWrapper: @unchecked Sendable {
         self.serviceName = serviceName
         self.useSID = useSID
         self.sslConfig = sslConfig
+        self.nativeNetworkEncryption = nativeNetworkEncryption
     }
 
     // MARK: - Connection
@@ -161,7 +164,7 @@ final class OracleConnectionWrapper: @unchecked Sendable {
         let identifier = serviceName.isEmpty ? database : serviceName
         let service: OracleServiceMethod = useSID ? .sid(identifier) : .serviceName(identifier)
         let tls = try OracleSSLMapping.tls(for: sslConfig)
-        let config = OracleNIO.OracleConnection.Configuration(
+        var config = OracleNIO.OracleConnection.Configuration(
             host: host,
             port: port,
             service: service,
@@ -169,6 +172,7 @@ final class OracleConnectionWrapper: @unchecked Sendable {
             password: password,
             tls: tls
         )
+        config.nativeNetworkEncryption = nativeNetworkEncryption
 
         let connectionId = Self.connectionCounter.withLock { state -> Int in
             state += 1
@@ -191,7 +195,8 @@ final class OracleConnectionWrapper: @unchecked Sendable {
             osLogger.debug("Connected to Oracle \(target)")
         } catch let sqlError as OracleSQLError {
             let detail = Self.connectFailureDetail(sqlError)
-            osLogger.error("Oracle connection failed: \(detail)")
+            let phase = sqlError.handshakePhase ?? "unknown"
+            osLogger.error("Oracle connection failed at phase \(phase, privacy: .public) (\(sqlError.code.description, privacy: .public)): \(detail)")
             if let sslError = OracleSSLClassifier.classifySSLError(detail) {
                 throw sslError
             }
@@ -215,16 +220,14 @@ final class OracleConnectionWrapper: @unchecked Sendable {
     }
 
     private func classifyConnectError(_ error: OracleSQLError) -> OracleError.Category {
-        let codeDescription = error.code.description
-        if codeDescription.hasPrefix("unsupportedVerifierType") {
-            return .authVerifierUnsupported(flag: codeDescription)
-        }
-        switch codeDescription {
-        case "uncleanShutdown":
-            return .authConnectionDropped
-        case "serverVersionNotSupported":
+        switch OracleConnectErrorClassifier.classify(error.code.description) {
+        case .verifierUnsupported(let flag):
+            return .authVerifierUnsupported(flag: flag)
+        case .versionNotSupported:
             return .authVersionNotSupported
-        default:
+        case .connectionDropped:
+            return .authConnectionDropped(phase: error.handshakePhase)
+        case .connectionFailed:
             return .connectionFailed
         }
     }
