@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Restored table tabs no longer reload all at once or flood failure dialogs on launch. Only the frontmost tab loads immediately; other restored tabs load when you switch to them, and a load failure now shows inline in the tab instead of a dialog. (#1796)
+
+## [0.54.0] - 2026-06-30
+
 ### Added
 
 - Per-tab database picker in the query editor toolbar. Each SQL tab can target its own database without clearing other tabs.
 - Single-clicking a table in the sidebar tree opens it in the current tab; double-clicking opens it in a new tab.
+- Table and column comments from the database now show in the UI. The sidebar shows a table's comment in dimmed text after its name, the data grid column header tooltip includes the column comment, and the table inspector shows the table comment. Toggle from View > Show Object Comments. Available for MySQL and PostgreSQL. (#1771)
 
 ### Changed
 
@@ -20,8 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Safe mode no longer jumps to the first tab after you confirm a query. The confirmation now stays on the tab you ran the query from. (#1781)
 - Switching between sidebar tables no longer leaves extra blank space above the list. (#1675)
 - SSH tunnels no longer pin a CPU core after the connection drops. A dropped tunnel is now detected and torn down instead of spinning in its relay loop. (#1769)
+- Restored table tabs now load with the current page size instead of the page size from the previous session.
+- MSSQL: large `nvarchar(max)` and `text` values no longer truncate to 2048 bytes when copied or viewed. TEXTSIZE is raised at connect time. (#1783)
+- Oracle connections with Native network encryption turned on no longer hang for about a minute against servers that do not complete it, such as Oracle 11g. The login now stops after 30 seconds and explains how to turn the option off. (#1746)
 
 ## [0.53.0] - 2026-06-25
 
@@ -2392,7 +2403,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.53.0...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.54.0...HEAD
+[0.54.0]: https://github.com/TableProApp/TablePro/compare/v0.53.0...v0.54.0
 [0.53.0]: https://github.com/TableProApp/TablePro/compare/v0.52.1...v0.53.0
 [0.52.1]: https://github.com/TableProApp/TablePro/compare/v0.52.0...v0.52.1
 [0.52.0]: https://github.com/TableProApp/TablePro/compare/v0.51.1...v0.52.0

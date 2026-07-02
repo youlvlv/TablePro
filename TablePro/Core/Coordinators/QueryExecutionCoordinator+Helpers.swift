@@ -79,6 +79,7 @@ extension QueryExecutionCoordinator {
         var columnDefaults: [String: String?] = [:]
         var columnForeignKeys: [String: ForeignKeyInfo] = [:]
         var columnNullable: [String: Bool] = [:]
+        var columnComments: [String: String] = [:]
         for (index, colType) in columnTypes.enumerated() {
             if case .enumType(_, let values) = colType, let vals = values, index < columns.count {
                 columnEnumValues[columns[index]] = vals
@@ -91,6 +92,7 @@ extension QueryExecutionCoordinator {
             columnDefaults = metadata.columnDefaults
             columnForeignKeys = metadata.columnForeignKeys ?? [:]
             columnNullable = metadata.columnNullable
+            columnComments = metadata.columnComments
             foreignKeysFetched = metadata.columnForeignKeys != nil
             for (col, vals) in metadata.columnEnumValues {
                 columnEnumValues[col] = vals
@@ -100,6 +102,7 @@ extension QueryExecutionCoordinator {
             columnDefaults = existing.columnDefaults
             columnForeignKeys = existing.columnForeignKeys
             columnNullable = existing.columnNullable
+            columnComments = existing.columnComments
             foreignKeysFetched = existing.foreignKeysFetched
             for (col, vals) in existing.columnEnumValues where columnEnumValues[col] == nil {
                 columnEnumValues[col] = vals
@@ -114,6 +117,7 @@ extension QueryExecutionCoordinator {
             columnForeignKeys: columnForeignKeys,
             columnEnumValues: columnEnumValues,
             columnNullable: columnNullable,
+            columnComments: columnComments,
             foreignKeysFetched: foreignKeysFetched
         )
         parent.setActiveTableRows(newTableRows, for: existingTabId)
@@ -333,7 +337,8 @@ extension QueryExecutionCoordinator {
             rows.updateDisplayMetadata(
                 columnDefaults: parsed.columnDefaults,
                 columnForeignKeys: parsed.columnForeignKeys,
-                columnNullable: parsed.columnNullable
+                columnNullable: parsed.columnNullable,
+                columnComments: parsed.columnComments
             )
         }
 
@@ -480,7 +485,8 @@ extension QueryExecutionCoordinator {
         _ error: Error,
         sql: String,
         tabId: UUID,
-        connection conn: DatabaseConnection
+        connection conn: DatabaseConnection,
+        trigger: TableLoadTrigger = .userInitiated
     ) {
         parent.currentQueryTask = nil
         parent.tabManager.mutate(tabId: tabId) { tab in
@@ -499,6 +505,8 @@ extension QueryExecutionCoordinator {
             wasSuccessful: false,
             errorMessage: error.localizedDescription
         )
+
+        guard !trigger.suppressesFailureModal else { return }
 
         let errorMessage = error.localizedDescription
         let queryCopy = sql
@@ -524,14 +532,14 @@ extension QueryExecutionCoordinator {
         }
     }
 
-    func restoreSchemaAndRunQuery(_ schema: String) async {
+    func restoreSchemaAndRunQuery(_ schema: String, trigger: TableLoadTrigger = .userInitiated) async {
         guard let driver = DatabaseManager.shared.driver(for: parent.connectionId) else {
-            parent.needsLazyLoad = true
+            parent.pendingLoadTrigger = trigger
             return
         }
         guard let schemaDriver = driver as? SchemaSwitchable,
               schemaDriver.currentSchema != nil else {
-            parent.runQuery()
+            parent.runQuery(trigger: trigger)
             return
         }
         do {
@@ -545,7 +553,7 @@ extension QueryExecutionCoordinator {
             helpersLogger.warning("Failed to restore schema '\(schema, privacy: .public)': \(error.localizedDescription, privacy: .public)")
             return
         }
-        parent.runQuery()
+        parent.runQuery(trigger: trigger)
     }
 }
 

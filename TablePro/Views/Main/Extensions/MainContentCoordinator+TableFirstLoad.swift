@@ -7,9 +7,9 @@ import Foundation
 import TableProPluginKit
 
 extension MainContentCoordinator {
-    func openTableTabQuery(tabId: UUID) async {
+    func openTableTabQuery(tabId: UUID, trigger: TableLoadTrigger = .userInitiated) async {
         guard await prepareTableTabFirstLoad(tabId: tabId) else { return }
-        executeTableTabQueryDirectly()
+        executeTableTabQueryDirectly(trigger: trigger)
     }
 
     @discardableResult
@@ -20,7 +20,12 @@ extension MainContentCoordinator {
               let tableName = tab.tableContext.tableName, !tableName.isEmpty else { return false }
 
         let hint = PluginManager.shared.defaultSortHint(for: connection.type, table: tableName)
-        guard firstLoadNeedsSchemaColumns(for: tab, hint: hint) else { return true }
+        guard firstLoadNeedsSchemaColumns(for: tab, hint: hint) else {
+            if let index = tabManager.tabs.firstIndex(where: { $0.id == tabId }) {
+                filterCoordinator.rebuildTableQuery(at: index)
+            }
+            return true
+        }
 
         await loadSchemaColumns(for: tableName, schema: tab.tableContext.schemaName)
 
@@ -52,7 +57,7 @@ extension MainContentCoordinator {
             tab.pendingRestoredSort ?? [],
             in: effectiveResultColumns(for: tab)
         )
-        let pageSize = max(1, AppSettingsManager.shared.dataGrid.defaultPageSize)
+        let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
         let page = max(1, tab.restoredPage ?? 1)
 
         tabManager.mutate(at: index) { tab in
